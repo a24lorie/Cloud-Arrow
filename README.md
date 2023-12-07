@@ -5,7 +5,7 @@
                                     Dic 2023
 			        Alfredo Lorie Bernardo, Ignacio Rodriguez Sanchez					
 
-                                 version 0.3.0
+                                 version 0.3.2
 
 ***
 
