@@ -5,7 +5,7 @@
                                     Dic 2023
 			        Alfredo Lorie Bernardo, Ignacio Rodriguez Sanchez					
 
-                                 version 0.3.2
+                                 version 0.4.0
 
 ***
 
@@ -99,7 +99,7 @@ Use the adls_object_storage object created and call the write method to save the
 3. **path**: Required - The object storage location to store the dataset
 4. **write_options**: Required - Options to write the files including: 
    1. ***partitions*** : Allows to specify which columns to use to split the dataset.
-   2. ***compression_codec***: Allow to specify the compression codec (None or Snappy)
+   2. ***compression_codec***: Allow to specify the compression codec (None, snappy, sz4, brotli, gzip, zstd)
    3. ***existing_data_behavior***:  Allows to specify how to handle data that already exists in the destination.
 
 ``` python
@@ -214,7 +214,7 @@ Use the gcsfs_object_storage object created and call the write method to save th
 3. **path**: Required - The object storage location to store the dataset
 4. **write_options**: Required - Options to write the files including: 
    1. ***partitions*** : Allows to specify which columns to use to split the dataset.
-   2. ***compression_codec***: Allow to specify the compression codec (None or Snappy)
+   2. ***compression_codec***: Allow to specify the compression codec (None, snappy, sz4, brotli, gzip, zstd)
    3. ***existing_data_behavior***:  Allows to specify how to handle data that already exists in the destination.
 
 ``` python
