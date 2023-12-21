@@ -16,6 +16,8 @@ __all__ = ['Condition',
            'WriteOptions',
            'AbstractObjectStorage']
 
+from pyarrow._dataset_parquet import ParquetFileWriteOptions, ParquetFileFormat
+
 """
 The following is a context-free grammar for DNF:
     DNF → (Conjunction) ∨ DNF
@@ -380,9 +382,20 @@ class AbstractObjectStorage(metaclass=ABCMeta):
                     partition_cols=write_options.partitions
                 )
         elif file_format == "deltalake":
-            write_deltalake(table_or_uri=self._get_delta_lake_url(path=path),
-                            data=table,
-                            partition_by=write_options.partitions,
-                            storage_options=self._get_deltalake_storage_options(),
-                            mode=write_options.existing_data_behavior()
-                            )
+            if write_options.compression_codec == "snappy":
+                write_deltalake(table_or_uri=self._get_delta_lake_url(path=path),
+                                data=table,
+                                partition_by=write_options.partitions,
+                                storage_options=self._get_deltalake_storage_options(),
+                                mode=write_options.existing_data_behavior()
+                                )
+            else:
+                write_deltalake(table_or_uri=self._get_delta_lake_url(path=path),
+                                data=table,
+                                partition_by=write_options.partitions,
+                                file_options=ds.ParquetFileFormat().make_write_options(
+                                    compression=write_options.compression_codec
+                                ),
+                                storage_options=self._get_deltalake_storage_options(),
+                                mode=write_options.existing_data_behavior()
+                )
