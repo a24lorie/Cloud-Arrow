@@ -5,8 +5,7 @@ setup(
     version='0.4.0',
     authors='Alfredo Lorie, Ignacio Rodriguez',
     author_email='a24lorie@gmail.com, nachorodriguez79@gmail.com',
-    description="""Python library to provide an Unified cloud storage API for reading and writing parquet and 
-                deltalake files from/to the main cloud provider's object storage using the arrow format""",
+    description="""Python library to provide an Unified cloud storage API for reading and writing parquet and  deltalake files from/to the main cloud provider's object storage using the arrow format""",
     long_description=open('README.md', encoding='UTF-8').read(),
     long_description_content_type='text/markdown',
     license='GNU',

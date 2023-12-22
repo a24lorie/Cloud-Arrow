@@ -15,31 +15,10 @@ if __name__ == '__main__':
     unittest.main()
 
 
-class TestADLSRead(ADLSTestBase):
+class TestADLSReadToPandas(ADLSTestBase):
 
     def __init__(self, *args, **kwargs):
-        super(TestADLSRead, self).__init__(*args, **kwargs)
-        load_dotenv()
-        self._tenant_id = os.getenv("TENANT_ID")
-        self._client_id = os.getenv("CLIENT_ID")
-        self._client_secret = os.getenv("CLIENT_SECRET")
-        self._storage_account_name = os.getenv("STORAGE_ACCOUNT")
-        self._container_name = os.getenv("CONTAINER_NAME")
-
-        self._credentials = ClientSecretCredential(
-            tenant_id=self._tenant_id,
-            client_id=self._client_id,
-            client_secret=self._client_secret
-        )
-
-        # Create the writer object
-        self._adls_object_storage = ADLSObjectStorage(
-            tenant_id=self._tenant_id,
-            client_id=self._client_id,
-            client_secret=self._client_secret,
-            account_name=self._storage_account_name,
-            container=self._container_name
-        )
+        super(TestADLSReadToPandas, self).__init__(*args, **kwargs)
 
     def test_adls_read_parquet_nopart_no_compression(self):
         base_path = "test_read_parquet_nopart_no_compression"

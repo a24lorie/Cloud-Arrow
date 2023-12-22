@@ -7,12 +7,16 @@ from dotenv import load_dotenv
 
 __all__ = ['ADLSTestBase']
 
+from cloud.adls import ADLSObjectStorage
+
 
 class ADLSTestBase(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(ADLSTestBase, self).__init__(*args, **kwargs)
+
         load_dotenv()
+
         self._tenant_id = os.getenv("TENANT_ID")
         self._client_id = os.getenv("CLIENT_ID")
         self._client_secret = os.getenv("CLIENT_SECRET")
@@ -23,6 +27,15 @@ class ADLSTestBase(unittest.TestCase):
             tenant_id=self._tenant_id,
             client_id=self._client_id,
             client_secret=self._client_secret
+        )
+
+        # Create the writer object
+        self._adls_object_storage = ADLSObjectStorage(
+            tenant_id=self._tenant_id,
+            client_id=self._client_id,
+            client_secret=self._client_secret,
+            account_name=self._storage_account_name,
+            container=self._container_name
         )
 
     def __get_azure_account_url(self, storage_account: str):
