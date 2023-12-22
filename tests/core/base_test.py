@@ -2,40 +2,45 @@ import os
 import unittest
 
 from azure.identity import ClientSecretCredential
-from azure.storage.filedatalake import DataLakeDirectoryClient, DataLakeFileClient, FileSystemClient
+from azure.storage.filedatalake import DataLakeDirectoryClient, FileSystemClient
 from dotenv import load_dotenv
-
-__all__ = ['ADLSTestBase']
 
 from cloud.adls import ADLSObjectStorage
 
 
 class ADLSTestBase(unittest.TestCase):
 
-    def __init__(self, *args, **kwargs):
-        super(ADLSTestBase, self).__init__(*args, **kwargs)
+    _container_name = None
+    _storage_account_name = None
+    _client_secret = None
+    _client_id = None
+    _tenant_id = None
+    _credentials = None
+    _adls_object_storage = None
 
+    @classmethod
+    def setUpClass(cls):
         load_dotenv()
 
-        self._tenant_id = os.getenv("TENANT_ID")
-        self._client_id = os.getenv("CLIENT_ID")
-        self._client_secret = os.getenv("CLIENT_SECRET")
-        self._storage_account_name = os.getenv("STORAGE_ACCOUNT")
-        self._container_name = os.getenv("CONTAINER_NAME")
+        cls._tenant_id = os.getenv("TENANT_ID")
+        cls._client_id = os.getenv("CLIENT_ID")
+        cls._client_secret = os.getenv("CLIENT_SECRET")
+        cls._storage_account_name = os.getenv("STORAGE_ACCOUNT")
+        cls._container_name = os.getenv("CONTAINER_NAME")
 
-        self._credentials = ClientSecretCredential(
-            tenant_id=self._tenant_id,
-            client_id=self._client_id,
-            client_secret=self._client_secret
+        cls._credentials = ClientSecretCredential(
+            tenant_id=cls._tenant_id,
+            client_id=cls._client_id,
+            client_secret=cls._client_secret
         )
 
         # Create the writer object
-        self._adls_object_storage = ADLSObjectStorage(
-            tenant_id=self._tenant_id,
-            client_id=self._client_id,
-            client_secret=self._client_secret,
-            account_name=self._storage_account_name,
-            container=self._container_name
+        cls._adls_object_storage = ADLSObjectStorage(
+            tenant_id=cls._tenant_id,
+            client_id=cls._client_id,
+            client_secret=cls._client_secret,
+            account_name=cls._storage_account_name,
+            container=cls._container_name
         )
 
     def __get_azure_account_url(self, storage_account: str):

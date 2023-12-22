@@ -1,25 +1,17 @@
-import unittest
-
 import pandas as pd
-from numpy import double
-from pyarrow import int64, string, DataType
 
 from cloud.core import ParquetWriteOptions
-from tests.cloud.core import ADLSTestBase
-
-if __name__ == '__main__':
-    unittest.main()
+from tests.core import ADLSTestBase
 
 
 class TestADLSDataset(ADLSTestBase):
-    _container_name = None
-    _storage_account_name = None
+
     _base_path = None
 
     def __init__(self, *args, **kwargs):
         super(TestADLSDataset, self).__init__(*args, **kwargs)
 
-        self._test_df = pd.read_csv('../../data/hmeq.csv')
+        self._test_df = pd.read_csv('data/hmeq.csv')
         self._base_path = "test_adls_dataset"
 
     def test_dataset_from_parquet_nopart(self):

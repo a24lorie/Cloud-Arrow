@@ -1,30 +1,19 @@
-import os
-import unittest
-
 import pandas as pd
-import pyarrow.parquet as pq
-from adlfs import AzureBlobFileSystem
-from azure.identity import ClientSecretCredential
-from dotenv import load_dotenv
 
-from cloud.adls import ADLSObjectStorage
-from cloud.core import ParquetWriteOptions, DeltaLakeWriteOptions
-from tests.cloud.core import ADLSTestBase
-
-if __name__ == '__main__':
-    unittest.main()
+from cloud.core import ParquetWriteOptions
+from tests.core import ADLSTestBase
 
 
 class TestADLSReadBatches(ADLSTestBase):
-    _container_name = None
-    _storage_account_name = None
+
     _base_path = None
+    _test_df = None
 
-    def __init__(self, *args, **kwargs):
-        super(TestADLSReadBatches, self).__init__(*args, **kwargs)
-
-        self._test_df = pd.read_csv('../../data/hmeq.csv')
-        self._base_path = "test_adls_dataset"
+    @classmethod
+    def setUpClass(cls):
+        ADLSTestBase.setUpClass()
+        cls._test_df = pd.read_csv('data/hmeq.csv')
+        cls._base_path = "test_adls_dataset"
 
     def test_read_batches_parquet_nopart(self):
         try:

@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from cloud.adls import ADLSObjectStorage
 from cloud.core import ParquetWriteOptions, DeltaLakeWriteOptions
-from tests.cloud.core import ADLSTestBase
+from tests.core import ADLSTestBase
 
 if __name__ == '__main__':
     unittest.main()
@@ -43,7 +43,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_no_compression(self):
         base_path = "test_write_parquet_nopart_no_compression"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -90,7 +90,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_snappy(self):
         base_path = "test_write_parquet_nopart_snappy"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -136,7 +136,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_gzip(self):
         base_path = "test_write_parquet_nopart_gzip"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -182,7 +182,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_brotli(self):
         base_path = "test_write_parquet_nopart_brotli"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -228,7 +228,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_zstd(self):
         base_path = "test_write_parquet_nopart_zstd"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -274,7 +274,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_lz4(self):
         base_path = "test_write_parquet_nopart_lz4"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -320,7 +320,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_no_compression(self):
         base_path = "test_write_deltalake_nopart_no_compression"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -369,7 +369,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_snappy(self):
         base_path = "test_write_deltalake_nopart_snappy"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -417,7 +417,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_gzip(self):
         base_path = "test_write_deltalake_nopart_gzip"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -465,7 +465,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_brotli(self):
         base_path = "test_write_deltalake_nopart_brotli"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -513,7 +513,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_zstd(self):
         base_path = "test_write_deltalake_nopart_zstd"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
@@ -561,7 +561,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_lz4(self):
         base_path = "test_write_deltalake_nopart_lz4"
-        input_df = pd.read_csv('../../data/hmeq.csv')
+        input_df = pd.read_csv('data/hmeq.csv')
 
         # write the table to ADLS
         self._adls_object_storage.write(table=input_df,
