@@ -4,10 +4,10 @@ from typing import Any
 
 from adlfs import AzureBlobFileSystem
 
-from ..core import AbstractObjectStorage
+from ..core import AbstractStorage
 
 
-class ADLSObjectStorage(AbstractObjectStorage, metaclass=ABCMeta):
+class ADLSStorage(AbstractStorage, metaclass=ABCMeta):
 
     def __init__(self,
                  tenant_id: str,
@@ -41,14 +41,15 @@ class ADLSObjectStorage(AbstractObjectStorage, metaclass=ABCMeta):
             client_secret=self._client_secret
         )
 
-    def _get_cloud_path(self, path):
-        return f"{self._container}/{AbstractObjectStorage._normalize_path(path)}"
+    def _get_filesystem_base_path(self, path):
+        return f"{self._container}/{AbstractStorage._normalize_path(path)}"
 
     def _get_deltalake_storage_options(self):
         """
            For delta-io documentation see: https://delta-io.github.io/delta-rs/python/usage.html#querying-delta-tables
            For Azure Options see:https://docs.rs/object_store/latest/object_store/azure/enum.AzureConfigKey.html#variants
-           For Available AuthProvider see: https://github.com/delta-io/delta-rs/blob/7090a1260fab0efc6804764559688f7766439b4f/crates/deltalake-core/src/data_catalog/unity/credential.rs#L79
+           For Available AuthProvider see:
+            https://github.com/delta-io/delta-rs/blob/7090a1260fab0efc6804764559688f7766439b4f/crates/deltalake-core/src/data_catalog/unity/credential.rs#L79
 
            example:
                storage_options = {"azure_storage_account_name": f"{self._account_name}", "azure_storage_access_key": "..."}
@@ -61,5 +62,5 @@ class ADLSObjectStorage(AbstractObjectStorage, metaclass=ABCMeta):
             "client_secret": f"{self._client_secret}"
         }
 
-    def _get_delta_lake_url(self, path) -> str:
-        return f"abfss://{self._container}@{self._account_name}.dfs.core.windows.net/{AbstractObjectStorage._normalize_path(path)}"
+    def _get_deltalake_url(self, path) -> str:
+        return f"abfss://{self._container}@{self._account_name}.dfs.core.windows.net/{AbstractStorage._normalize_path(path)}"

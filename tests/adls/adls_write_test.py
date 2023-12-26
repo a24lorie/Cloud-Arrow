@@ -7,7 +7,7 @@ from adlfs import AzureBlobFileSystem
 from azure.identity import ClientSecretCredential
 from dotenv import load_dotenv
 
-from cloud.adls import ADLSObjectStorage
+from cloud.adls import ADLSStorage
 from cloud.core import ParquetWriteOptions, DeltaLakeWriteOptions
 from tests.core import ADLSTestBase
 
@@ -33,7 +33,7 @@ class TestADLSWrite(ADLSTestBase):
         )
 
         # Create the writer object
-        self._adls_object_storage = ADLSObjectStorage(
+        self._adls_object_storage = ADLSStorage(
             tenant_id=self._tenant_id,
             client_id=self._client_id,
             client_secret=self._client_secret,

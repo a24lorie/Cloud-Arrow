@@ -14,7 +14,7 @@ __all__ = ['Condition',
            'ParquetWriteOptions',
            'DeltaLakeWriteOptions',
            'WriteOptions',
-           'AbstractObjectStorage']
+           'AbstractStorage']
 
 """
 The following is a context-free grammar for DNF:
@@ -241,7 +241,7 @@ class DeltaLakeWriteOptions(WriteOptions, metaclass=ABCMeta):
         return self._existing_data_behavior
 
 
-class AbstractObjectStorage(metaclass=ABCMeta):
+class AbstractStorage(metaclass=ABCMeta):
     def __init__(self):
         self._logger = logging.getLogger('cloud_arrow')
 
@@ -264,7 +264,7 @@ class AbstractObjectStorage(metaclass=ABCMeta):
         return path[:-1] if path.endswith("/") else path
 
     @abstractmethod
-    def _get_cloud_path(self, path) -> str:
+    def _get_filesystem_base_path(self, path) -> str:
         pass
 
     @abstractmethod
@@ -280,7 +280,7 @@ class AbstractObjectStorage(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _get_delta_lake_url(self, path) -> str:
+    def _get_deltalake_url(self, path) -> str:
         pass
 
     def dataset(self,
@@ -318,13 +318,13 @@ class AbstractObjectStorage(metaclass=ABCMeta):
 
         if file_format == "parquet":
             return ds.dataset(
-                source=self._get_cloud_path(path=path),
+                source=self._get_filesystem_base_path(path=path),
                 filesystem=filesystem,
                 partitioning=partitioning
             )
         elif file_format == "deltalake":
             return DeltaTable(
-                table_uri=self._get_delta_lake_url(path=self._get_cloud_path(path=path)),
+                table_uri=self._get_deltalake_url(path=self._get_filesystem_base_path(path=path)),
                 storage_options=self._get_deltalake_storage_options()
             ).to_pyarrow_dataset()
 
@@ -486,7 +486,7 @@ class AbstractObjectStorage(metaclass=ABCMeta):
 
         if file_format == "parquet":
             self._logger.debug(f""" Write to Dataset: 
-                                   root_path: '{self._get_cloud_path(path=path)}'
+                                   root_path: '{self._get_filesystem_base_path(path=path)}'
                                    filesystem: {type(filesystem)}
                                    file_format:{write_options.compression_codec}
                                    existing_data_behavior:{write_options.existing_data_behavior}
@@ -495,7 +495,7 @@ class AbstractObjectStorage(metaclass=ABCMeta):
 
             pq.write_to_dataset(
                 pyarr_table,
-                root_path=self._get_cloud_path(path=path),
+                root_path=self._get_filesystem_base_path(path=path),
                 filesystem=filesystem,
                 compression=write_options.compression_codec,
                 existing_data_behavior=write_options.existing_data_behavior(),
@@ -503,7 +503,7 @@ class AbstractObjectStorage(metaclass=ABCMeta):
             )
         elif file_format == "deltalake":
             write_deltalake(
-                table_or_uri=self._get_delta_lake_url(path=path),
+                table_or_uri=self._get_deltalake_url(path=path),
                 data=table,
                 partition_by=write_options.partitions,
                 file_options=ds.ParquetFileFormat().make_write_options(

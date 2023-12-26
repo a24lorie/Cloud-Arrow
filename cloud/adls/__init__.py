@@ -1,1 +1,1 @@
-from .adls import ADLSObjectStorage
+from .adls import ADLSStorage

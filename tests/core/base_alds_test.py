@@ -5,7 +5,7 @@ from azure.identity import ClientSecretCredential
 from azure.storage.filedatalake import DataLakeDirectoryClient, FileSystemClient
 from dotenv import load_dotenv
 
-from cloud.adls import ADLSObjectStorage
+from cloud.adls import ADLSStorage
 
 
 class ADLSTestBase(unittest.TestCase):
@@ -35,7 +35,7 @@ class ADLSTestBase(unittest.TestCase):
         )
 
         # Create the writer object
-        cls._adls_object_storage = ADLSObjectStorage(
+        cls._adls_object_storage = ADLSStorage(
             tenant_id=cls._tenant_id,
             client_id=cls._client_id,
             client_secret=cls._client_secret,
