@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='cloud-arrow',
-    version='0.4.0',
+    version='0.6.0',
     authors='Alfredo Lorie, Ignacio Rodriguez',
     author_email='a24lorie@gmail.com, nachorodriguez79@gmail.com',
     description="""Python library to provide an Unified cloud storage API for reading and writing parquet and  deltalake files from/to the main cloud provider's object storage using the arrow format""",
@@ -15,12 +15,14 @@ setup(
     packages=['cloud_arrow',
               'cloud_arrow.core',
               'cloud_arrow.adls',
-              'cloud_arrow.gcsfs'
+              'cloud_arrow.gcsfs',
+              'cloud_arrow.local'
     ],
     package_dir={
         'cloud_arrow': 'cloud',
         'cloud_arrow.core': 'cloud/core',
         'cloud_arrow.adls': 'cloud/adls',
-        'cloud_arrow.gcsfs': 'cloud/gcsfs'
+        'cloud_arrow.gcsfs': 'cloud/gcsfs',
+        'cloud_arrow.local': 'cloud/local'
     }
 )
