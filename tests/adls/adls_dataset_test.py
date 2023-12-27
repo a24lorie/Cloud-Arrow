@@ -1,49 +1,108 @@
 import pandas as pd
 
-from cloud.core import ParquetWriteOptions
 from tests.core import ADLSTestBase
+import pyarrow as pa
+import pyarrow.dataset as ds
+import pyarrow.parquet as pq
+import deltalake as dlt
 
 
 class TestADLSDataset(ADLSTestBase):
-
     _base_path = None
+    _test_df = None
+    _schema = None
 
-    def __init__(self, *args, **kwargs):
-        super(TestADLSDataset, self).__init__(*args, **kwargs)
+    @classmethod
+    def setUpClass(cls):
+        ADLSTestBase.setUpClass()
 
-        self._test_df = pd.read_csv('data/hmeq.csv')
-        self._base_path = "test_adls_dataset"
-
-    def test_dataset_from_parquet_nopart(self):
+        cls._base_path = "write"
+        cls._test_df = pd.read_csv("data/diabetes/csv/nopart/diabetes.csv")
 
         try:
-            # write the table to ADLS
-            self._adls_object_storage.write(table=self._test_df,
-                                            file_format="parquet",
-                                            path=self._base_path,
-                                            write_options=ParquetWriteOptions(
-                                                partitions=[],
-                                                compression_codec="None",
-                                                existing_data_behavior="overwrite_or_ignore")
-                                            )
+            # write parquet directories
+            ADLSTestBase._get_filesystem_client().create_directory(f"{cls._base_path}/parquet/part")
+            ADLSTestBase._get_filesystem_client().create_directory(f"{cls._base_path}/parquet/nopart")
+            ADLSTestBase._get_filesystem_client().create_directory(f"{cls._base_path}/deltalake/part")
+            ADLSTestBase._get_filesystem_client().create_directory(f"{cls._base_path}/deltalake/nopart")
 
+            arr_table = pa.Table.from_pandas(cls._test_df)
+            cls._schema = arr_table.schema
+
+            # use pyarrow library to write parquet files
+            pq.write_to_dataset(arr_table, filesystem=cls._filesystem, compression='none',
+                    existing_data_behavior='error', partition_cols=["Pregnancies"],
+                    root_path=cls._adls_object_storage._get_filesystem_base_path(f"{cls._base_path}/parquet/part"))
+            pq.write_to_dataset(arr_table, filesystem=cls._filesystem, compression='none', existing_data_behavior='error',
+                    root_path=cls._adls_object_storage._get_filesystem_base_path(f"{cls._base_path}/parquet/nopart"))
+
+            # use deltalake library to write deltalake files
+            dlt.write_deltalake(
+                table_or_uri=cls._adls_object_storage._get_deltalake_url(f"{cls._base_path}/deltalake/part"),
+                data=arr_table, mode="error", partition_by=["Pregnancies"],
+                storage_options=cls._adls_object_storage._get_deltalake_storage_options(),
+                file_options=ds.ParquetFileFormat().make_write_options(compression='none'))
+            dlt.write_deltalake(
+                table_or_uri=cls._adls_object_storage._get_deltalake_url(f"{cls._base_path}/deltalake/nopart"),
+                data=arr_table, mode="error",
+                storage_options=cls._adls_object_storage._get_deltalake_storage_options(),
+                file_options=ds.ParquetFileFormat().make_write_options(compression='none'))
+        finally:
+            pass
+
+    @classmethod
+    def tearDownClass(cls):
+        # Remove write directory recursively
+        cls._delete_adls_dir(f"{cls._base_path}")
+
+    def test_adls_dataset_from_parquet_nopart(self):
+        try:
             dataset = self._adls_object_storage.dataset(
                 file_format="parquet",
-                path=self._base_path
+                path=f"{self._base_path}/parquet/nopart"
             )
 
-            schema_str = dataset.schema.to_string(show_field_metadata=False, show_schema_metadata=False)
-
             self.assertEqual(
-                first="BAD: int64\nLOAN: int64\nMORTDUE: double\nVALUE: double\nREASON: string\nJOB: string\nYOJ: "
-                      "double\nDEROG: double\nDELINQ: double\nCLAGE: double\nNINQ: double\nCLNO: double\nDEBTINC: "
-                      "double",
-                second=schema_str,
+                first=set(self._schema.names).difference(set(dataset.schema.names)),
+                second=set(),
                 msg="Should match"
             )
         finally:
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=self._base_path
-            )
+            pass
+
+
+    def test_adls_dataset_from_deltalake_nopart(self):
+        dataset = self._adls_object_storage.dataset(
+            file_format="deltalake",
+            path=f"{self._base_path}/deltalake/nopart"
+        )
+
+        self.assertEqual(
+            first=set(self._schema.names).difference(set(dataset.schema.names)),
+            second=set(),
+            msg="Should match"
+        )
+
+    def test_adls_dataset_from_parquet_part(self):
+        dataset = self._adls_object_storage.dataset(
+            file_format="parquet",
+            path=f"{self._base_path}/parquet/part"
+        )
+
+        self.assertEqual(
+            first=set(self._schema.names).difference(set(dataset.schema.names)),
+            second=set(),
+            msg="Should match"
+        )
+
+    def test_adls_dataset_from_deltalake_part(self):
+        dataset = self._adls_object_storage.dataset(
+            file_format="deltalake",
+            path=f"{self._base_path}/deltalake/part"
+        )
+
+        self.assertEqual(
+            first=set(self._schema.names).difference(set(dataset.schema.names)),
+            second=set(),
+            msg="Should match"
+        )

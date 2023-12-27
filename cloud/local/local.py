@@ -2,7 +2,7 @@ import logging
 from abc import ABCMeta
 from typing import Any
 
-from pyarrow.filesystem import LocalFileSystem
+from pyarrow.fs import LocalFileSystem
 
 from ..core import AbstractStorage
 

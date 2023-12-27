@@ -324,7 +324,7 @@ class AbstractStorage(metaclass=ABCMeta):
             )
         elif file_format == "deltalake":
             return DeltaTable(
-                table_uri=self._get_deltalake_url(path=self._get_filesystem_base_path(path=path)),
+                table_uri=self._get_deltalake_url(path=AbstractStorage._normalize_path(path)),
                 storage_options=self._get_deltalake_storage_options()
             ).to_pyarrow_dataset()
 

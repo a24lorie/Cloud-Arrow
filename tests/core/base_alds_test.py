@@ -1,6 +1,7 @@
 import os
 import unittest
 
+from adlfs import AzureBlobFileSystem
 from azure.identity import ClientSecretCredential
 from azure.storage.filedatalake import DataLakeDirectoryClient, FileSystemClient
 from dotenv import load_dotenv
@@ -17,6 +18,7 @@ class ADLSTestBase(unittest.TestCase):
     _tenant_id = None
     _credentials = None
     _adls_object_storage = None
+    _filesystem = None
 
     @classmethod
     def setUpClass(cls):
@@ -43,10 +45,17 @@ class ADLSTestBase(unittest.TestCase):
             container=cls._container_name
         )
 
-    def __get_azure_account_url(self, storage_account: str):
+        cls._filesystem = AzureBlobFileSystem(
+            account_name=cls._storage_account_name,
+            tenant_id=cls._tenant_id,
+            client_id=cls._client_id,
+            client_secret=cls._client_secret
+        )
+
+    @classmethod
+    def __get_azure_account_url(cls):
         """
 
-        :param storage_account:
         :return:
         """
 
@@ -56,49 +65,40 @@ class ADLSTestBase(unittest.TestCase):
                 https://stackoverflow.com/questions/63475269/how-do-you-delete-a-file-from-an-azure-data-lake-using-the-python-sdk
         """
 
-        return f"https://{storage_account}.dfs.core.windows.net"
+        return f"https://{cls._storage_account_name}.dfs.core.windows.net"
 
-    def _get_filesystem_client(self, storage_account: str, container: str):
+    @classmethod
+    def _get_filesystem_client(cls):
         """
 
-        :param storage_account:
-        :param container:
-        :param path:
         :return:
         """
 
         return FileSystemClient(
-           account_url=self.__get_azure_account_url(storage_account),
-           file_system_name=container,
-           credential=self._credentials
+           account_url=cls.__get_azure_account_url(),
+           file_system_name=cls._container_name,
+           credential=cls._credentials
         )
 
-    def _get_DataLakeDirectoryClient(self, storage_account: str, container: str, path: str):
+    @classmethod
+    def _get_DataLakeDirectoryClient(cls, path: str):
         """
-        :param storage_account:
-        :param container:
         :param path:
         :return:
         """
         return DataLakeDirectoryClient(
-            account_url=self.__get_azure_account_url(storage_account),
-            file_system_name=container,
+            account_url=cls.__get_azure_account_url(),
+            file_system_name=cls._container_name,
             directory_name=path,
-            credential=self._credentials
+            credential=cls._credentials
         )
 
-    def _delete_adls_dir(self, storage_account: str, container: str, path: str):
+    @classmethod
+    def _delete_adls_dir(cls, path: str):
         """
 
-        :param storage_account:
-        :param container:
         :param path:
         :return:
         """
 
-        directory_client = self._get_DataLakeDirectoryClient(
-           storage_account=storage_account,
-           container=container,
-           path=path
-        )
-        directory_client.delete_directory()
+        cls._get_DataLakeDirectoryClient(path=path).delete_directory()

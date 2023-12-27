@@ -1,13 +1,9 @@
-import os
 import unittest
 
 import pandas as pd
 import pyarrow.parquet as pq
 from adlfs import AzureBlobFileSystem
-from azure.identity import ClientSecretCredential
-from dotenv import load_dotenv
 
-from cloud.adls import ADLSStorage
 from cloud.core import ParquetWriteOptions, DeltaLakeWriteOptions
 from tests.core import ADLSTestBase
 
@@ -16,39 +12,26 @@ if __name__ == '__main__':
 
 
 class TestADLSWrite(ADLSTestBase):
+    
+    _base_path = None
 
-    def __init__(self, *args, **kwargs):
-        super(TestADLSWrite, self).__init__(*args, **kwargs)
-        load_dotenv()
-        self._tenant_id = os.getenv("TENANT_ID")
-        self._client_id = os.getenv("CLIENT_ID")
-        self._client_secret = os.getenv("CLIENT_SECRET")
-        self._storage_account_name = os.getenv("STORAGE_ACCOUNT")
-        self._container_name = os.getenv("CONTAINER_NAME")
+    @classmethod
+    def setUpClass(cls):
+        ADLSTestBase.setUpClass()
 
-        self._credentials = ClientSecretCredential(
-            tenant_id=self._tenant_id,
-            client_id=self._client_id,
-            client_secret=self._client_secret
-        )
+        cls._base_path = "write"
+        cls._test_df = pd.read_csv("data/diabetes/csv/nopart/diabetes.csv")
 
-        # Create the writer object
-        self._adls_object_storage = ADLSStorage(
-            tenant_id=self._tenant_id,
-            client_id=self._client_id,
-            client_secret=self._client_secret,
-            account_name=self._storage_account_name,
-            container=self._container_name
-        )
+    @classmethod
+    def tearDownClass(cls):
+        # Remove write directory recursively
+        cls._delete_adls_dir(f"{cls._base_path}")
 
     def test_adls_write_parquet_nopart_no_compression(self):
-        base_path = "test_write_parquet_nopart_no_compression"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="parquet",
-                                        path=base_path,
+                                        path=f"{self._base_path}/parquet/test_nocompression",
                                         write_options=ParquetWriteOptions(
                                             partitions=[],
                                             compression_codec="None",
@@ -56,46 +39,28 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_nocompression")
 
             for path in paths:
                 # print(path)
                 # read the file metadata
                 metadata = pq.read_metadata(
                     where=f"{self._container_name}/{path['name']}",
-                    filesystem=adls_filesystem
+                    filesystem=self._filesystem
                 )
                 compression_type = metadata.row_group(0).column(0).compression
                 print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                 assert (compression_type == 'UNCOMPRESSED')
 
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_parquet_nopart_snappy(self):
-        base_path = "test_write_parquet_nopart_snappy"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="parquet",
-                                        path=base_path,
+                                        path=f"{self._base_path}/parquet/test_snappy",
                                         write_options=ParquetWriteOptions(
                                             partitions=[],
                                             compression_codec="snappy",
@@ -103,45 +68,27 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_snappy")
 
             for path in paths:
                 # print(path)
                 # read the file metadata
                 metadata = pq.read_metadata(
                     where=f"{self._container_name}/{path['name']}",
-                    filesystem=adls_filesystem
+                    filesystem=self._filesystem
                 )
                 compression_type = metadata.row_group(0).column(0).compression
                 print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                 assert (compression_type == 'SNAPPY')
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_parquet_nopart_gzip(self):
-        base_path = "test_write_parquet_nopart_gzip"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="parquet",
-                                        path=base_path,
+                                        path=f"{self._base_path}/parquet/test_gzip",
                                         write_options=ParquetWriteOptions(
                                             partitions=[],
                                             compression_codec="gzip",
@@ -149,45 +96,27 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_gzip")
 
             for path in paths:
                 # print(path)
                 # read the file metadata
                 metadata = pq.read_metadata(
                     where=f"{self._container_name}/{path['name']}",
-                    filesystem=adls_filesystem
+                    filesystem=self._filesystem
                 )
                 compression_type = metadata.row_group(0).column(0).compression
                 print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                 assert (compression_type == 'GZIP')
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_parquet_nopart_brotli(self):
-        base_path = "test_write_parquet_nopart_brotli"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="parquet",
-                                        path=base_path,
+                                        path=f"{self._base_path}/parquet/test_brotli",
                                         write_options=ParquetWriteOptions(
                                             partitions=[],
                                             compression_codec="brotli",
@@ -195,45 +124,27 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_brotli")
 
             for path in paths:
                 # print(path)
                 # read the file metadata
                 metadata = pq.read_metadata(
                     where=f"{self._container_name}/{path['name']}",
-                    filesystem=adls_filesystem
+                    filesystem=self._filesystem
                 )
                 compression_type = metadata.row_group(0).column(0).compression
                 print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                 assert (compression_type == 'BROTLI')
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_parquet_nopart_zstd(self):
-        base_path = "test_write_parquet_nopart_zstd"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="parquet",
-                                        path=base_path,
+                                        path=f"{self._base_path}/parquet/test_zstd",
                                         write_options=ParquetWriteOptions(
                                             partitions=[],
                                             compression_codec="zstd",
@@ -241,45 +152,27 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_zstd")
 
             for path in paths:
                 # print(path)
                 # read the file metadata
                 metadata = pq.read_metadata(
                     where=f"{self._container_name}/{path['name']}",
-                    filesystem=adls_filesystem
+                    filesystem=self._filesystem
                 )
                 compression_type = metadata.row_group(0).column(0).compression
                 print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                 assert (compression_type == 'ZSTD')
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_parquet_nopart_lz4(self):
-        base_path = "test_write_parquet_nopart_lz4"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="parquet",
-                                        path=base_path,
+                                        path=f"{self._base_path}/parquet/test_lz4",
                                         write_options=ParquetWriteOptions(
                                             partitions=[],
                                             compression_codec="lz4",
@@ -287,45 +180,27 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_lz4")
 
             for path in paths:
                 # print(path)
                 # read the file metadata
                 metadata = pq.read_metadata(
                     where=f"{self._container_name}/{path['name']}",
-                    filesystem=adls_filesystem
+                    filesystem=self._filesystem
                 )
                 compression_type = metadata.row_group(0).column(0).compression
                 print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                 assert (compression_type == 'LZ4')
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_deltalake_nopart_no_compression(self):
-        base_path = "test_write_deltalake_nopart_no_compression"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="deltalake",
-                                        path=base_path,
+                                        path=f"{self._base_path}/deltalake/test_nocompression",
                                         write_options=DeltaLakeWriteOptions(
                                             partitions=[],
                                             compression_codec="None",
@@ -333,18 +208,8 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path, recursive=False)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_nocompression", recursive=False)
 
             for path in paths:
                 # print(path)
@@ -352,7 +217,7 @@ class TestADLSWrite(ADLSTestBase):
                 if not path.is_directory:
                     metadata = pq.read_metadata(
                         where=f"{self._container_name}/{path['name']}",
-                        filesystem=adls_filesystem
+                        filesystem=self._filesystem
                     )
 
                     compression_type = metadata.row_group(0).column(0).compression
@@ -360,21 +225,13 @@ class TestADLSWrite(ADLSTestBase):
                     assert (compression_type == 'UNCOMPRESSED')
 
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_deltalake_nopart_snappy(self):
-        base_path = "test_write_deltalake_nopart_snappy"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="deltalake",
-                                        path=base_path,
+                                        path=f"{self._base_path}/deltalake/test_snappy",
                                         write_options=DeltaLakeWriteOptions(
                                             partitions=[],
                                             compression_codec="snappy",
@@ -382,18 +239,8 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path, recursive=False)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_snappy", recursive=False)
 
             for path in paths:
                 # print(path)
@@ -401,28 +248,20 @@ class TestADLSWrite(ADLSTestBase):
                 if not path.is_directory:
                     metadata = pq.read_metadata(
                         where=f"{self._container_name}/{path['name']}",
-                        filesystem=adls_filesystem
+                        filesystem=self._filesystem
                     )
 
                     compression_type = metadata.row_group(0).column(0).compression
                     print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                     assert (compression_type == 'SNAPPY')
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_deltalake_nopart_gzip(self):
-        base_path = "test_write_deltalake_nopart_gzip"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="deltalake",
-                                        path=base_path,
+                                        path=f"{self._base_path}/deltalake/test_gzip",
                                         write_options=DeltaLakeWriteOptions(
                                             partitions=[],
                                             compression_codec="gzip",
@@ -430,18 +269,8 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path, recursive=False)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_gzip", recursive=False)
 
             for path in paths:
                 # print(path)
@@ -449,28 +278,20 @@ class TestADLSWrite(ADLSTestBase):
                 if not path.is_directory:
                     metadata = pq.read_metadata(
                         where=f"{self._container_name}/{path['name']}",
-                        filesystem=adls_filesystem
+                        filesystem=self._filesystem
                     )
 
                     compression_type = metadata.row_group(0).column(0).compression
                     print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                     assert (compression_type == 'GZIP')
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_deltalake_nopart_brotli(self):
-        base_path = "test_write_deltalake_nopart_brotli"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="deltalake",
-                                        path=base_path,
+                                        path=f"{self._base_path}/deltalake/test_brotli",
                                         write_options=DeltaLakeWriteOptions(
                                             partitions=[],
                                             compression_codec="brotli",
@@ -478,18 +299,8 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path, recursive=False)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_brotli", recursive=False)
 
             for path in paths:
                 # print(path)
@@ -497,28 +308,20 @@ class TestADLSWrite(ADLSTestBase):
                 if not path.is_directory:
                     metadata = pq.read_metadata(
                         where=f"{self._container_name}/{path['name']}",
-                        filesystem=adls_filesystem
+                        filesystem=self._filesystem
                     )
 
                     compression_type = metadata.row_group(0).column(0).compression
                     print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                     assert (compression_type == 'BROTLI')
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_deltalake_nopart_zstd(self):
-        base_path = "test_write_deltalake_nopart_zstd"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="deltalake",
-                                        path=base_path,
+                                        path=f"{self._base_path}/deltalake/test_zstd",
                                         write_options=DeltaLakeWriteOptions(
                                             partitions=[],
                                             compression_codec="zstd",
@@ -526,18 +329,8 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path, recursive=False)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_zstd", recursive=False)
 
             for path in paths:
                 # print(path)
@@ -545,28 +338,20 @@ class TestADLSWrite(ADLSTestBase):
                 if not path.is_directory:
                     metadata = pq.read_metadata(
                         where=f"{self._container_name}/{path['name']}",
-                        filesystem=adls_filesystem
+                        filesystem=self._filesystem
                     )
 
                     compression_type = metadata.row_group(0).column(0).compression
                     print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                     assert (compression_type == 'ZSTD')
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
 
     def test_adls_write_deltalake_nopart_lz4(self):
-        base_path = "test_write_deltalake_nopart_lz4"
-        input_df = pd.read_csv('data/hmeq.csv')
-
         # write the table to ADLS
-        self._adls_object_storage.write(table=input_df,
+        self._adls_object_storage.write(table=self._test_df,
                                         file_format="deltalake",
-                                        path=base_path,
+                                        path=f"{self._base_path}/deltalake/test_lz4",
                                         write_options=DeltaLakeWriteOptions(
                                             partitions=[],
                                             compression_codec="lz4",
@@ -574,18 +359,8 @@ class TestADLSWrite(ADLSTestBase):
                                         )
 
         try:
-            filesystem_client = self._get_filesystem_client(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-            )
-            paths = filesystem_client.get_paths(path=base_path, recursive=False)
-
-            adls_filesystem = AzureBlobFileSystem(
-                account_name=self._storage_account_name,
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
-            )
+            filesystem_client = self._get_filesystem_client()
+            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_lz4", recursive=False)
 
             for path in paths:
                 # print(path)
@@ -593,16 +368,11 @@ class TestADLSWrite(ADLSTestBase):
                 if not path.is_directory:
                     metadata = pq.read_metadata(
                         where=f"{self._container_name}/{path['name']}",
-                        filesystem=adls_filesystem
+                        filesystem=self._filesystem
                     )
 
                     compression_type = metadata.row_group(0).column(0).compression
                     print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
                     assert (compression_type == 'LZ4')
         finally:
-            # delete the file
-            self._delete_adls_dir(
-                storage_account=self._storage_account_name,
-                container=self._container_name,
-                path=base_path
-            )
+            pass
