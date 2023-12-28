@@ -1,2 +1,2 @@
 from .core import Condition, ConditionFactory, ParquetWriteOptions, DeltaLakeWriteOptions, WriteOptions
-from .core import AbstractObjectStorage
+from .core import AbstractStorage

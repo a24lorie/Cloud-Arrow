@@ -5,14 +5,15 @@
                                     Dic 2023
 			        Alfredo Lorie Bernardo, Ignacio Rodriguez Sanchez					
 
-                                 version 0.4.0
+                                 version 0.6.0
 
 ***
 
 # Introduction
 
 `Cloud Arrow` is a python library to provide read and write capabilities for **Parquet** and **Deltalake** files 
-(without relying on spark) from/to the main cloud providers object storage service (Azure ADLSGen2, Google GCSFS, AWS S3 -> coming soon). 
+(without relying on spark) from/to the main cloud providers object storage service (Azure ADLSGen2, Google GCSFS, AWS S3 -> coming soon) 
+and the Local FileSystem. 
 The main goal is to provide a single and unified API for reading and writing files from python programs. 
 This library is available in PyPI and distributed under the GNU license.4 
 
