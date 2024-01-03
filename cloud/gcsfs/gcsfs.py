@@ -4,10 +4,10 @@ from typing import Any
 
 from gcsfs import GCSFileSystem
 
-from ..core import AbstractObjectStorage
+from ..core import AbstractStorage
 
 
-class GCSFSObjectStorage(AbstractObjectStorage, metaclass=ABCMeta):
+class GCSFSStorage(AbstractStorage, metaclass=ABCMeta):
 
     def __init__(self,
                  project: str,
@@ -41,8 +41,8 @@ class GCSFSObjectStorage(AbstractObjectStorage, metaclass=ABCMeta):
             default_location=self._default_location
         )
 
-    def _get_cloud_path(self, path):
-        return f"{self._bucket}/{AbstractObjectStorage._normalize_path(path)}"
+    def _get_filesystem_base_path(self, path):
+        return f"{self._bucket}/{AbstractStorage._normalize_path(path)}"
 
     def _get_deltalake_storage_options(self):
         """
@@ -54,5 +54,5 @@ class GCSFSObjectStorage(AbstractObjectStorage, metaclass=ABCMeta):
             "bucket": f"{self._bucket}"
         }
 
-    def _get_delta_lake_url(self, path) -> str:
-        return f"gs://{self._bucket}/{AbstractObjectStorage._normalize_path(path)}"
+    def _get_deltalake_url(self, path) -> str:
+        return f"gs://{self._bucket}/{AbstractStorage._normalize_path(path)}"

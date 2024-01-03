@@ -1,1 +1,1 @@
-from .gcsfs import GCSFSObjectStorage
+from .gcsfs import GCSFSStorage
