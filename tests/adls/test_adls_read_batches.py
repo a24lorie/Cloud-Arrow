@@ -17,7 +17,7 @@ class TestADLSReadBatches(ADLSTestBase):
         ADLSTestBase.setUpClass()
 
         cls._base_path = "write"
-        cls._test_df = pd.read_csv("data/diabetes/csv/nopart/diabetes.csv")
+        cls._test_df = pd.read_csv("../data/diabetes/csv/nopart/diabetes.csv")
 
         try:
             # write parquet directories
