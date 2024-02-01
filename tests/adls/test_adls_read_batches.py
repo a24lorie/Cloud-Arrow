@@ -10,14 +10,14 @@ from tests.core import ADLSTestBase
 class TestADLSReadBatches(ADLSTestBase):
 
     _base_path = None
-    _test_df = None
+    _test_table = None
 
     @classmethod
     def setUpClass(cls):
         ADLSTestBase.setUpClass()
 
         cls._base_path = "write"
-        cls._test_df = pd.read_csv("data/diabetes/csv/nopart/diabetes.csv")
+        cls._test_table = cls.make_mock_diabetes_arrow_table()
 
         try:
             # write parquet directories
@@ -26,7 +26,7 @@ class TestADLSReadBatches(ADLSTestBase):
             ADLSTestBase._get_filesystem_client().create_directory(f"{cls._base_path}/deltalake/part")
             ADLSTestBase._get_filesystem_client().create_directory(f"{cls._base_path}/deltalake/nopart")
 
-            arr_table = pa.Table.from_pandas(cls._test_df)
+            arr_table = cls._test_table
             cls._schema = arr_table.schema
 
             # use pyarrow library to write parquet files
@@ -69,7 +69,7 @@ class TestADLSReadBatches(ADLSTestBase):
         #     table = scan_batch.to_table()
         #     count += table.num_rows
 
-        count_test_df = len(self._test_df.index)
+        count_test_df = self._test_table.num_rows
 
         self.assertEqual(
             count,
@@ -93,7 +93,7 @@ class TestADLSReadBatches(ADLSTestBase):
         #     table = scan_batch.to_table()
         #     count += table.num_rows
 
-        count_test_df = len(self._test_df.index)
+        count_test_df = self._test_table.num_rows
 
         self.assertEqual(
             count,
@@ -117,7 +117,7 @@ class TestADLSReadBatches(ADLSTestBase):
         #     table = scan_batch.to_table()
         #     count += table.num_rows
 
-        count_test_df = len(self._test_df.index)
+        count_test_df = self._test_table.num_rows
 
         self.assertEqual(
             count,
@@ -141,7 +141,7 @@ class TestADLSReadBatches(ADLSTestBase):
         #     table = scan_batch.to_table()
         #     count += table.num_rows
 
-        count_test_df = len(self._test_df.index)
+        count_test_df = self._test_table.num_rows
 
         self.assertEqual(
             count,

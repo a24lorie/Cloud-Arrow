@@ -17,7 +17,7 @@ class TestADLSDataset(ADLSTestBase):
         ADLSTestBase.setUpClass()
 
         cls._base_path = "write"
-        cls._test_df = pd.read_csv("data/diabetes/csv/nopart/diabetes.csv")
+        cls._test_df = pd.read_csv("../data/diabetes/csv/nopart/diabetes.csv")
 
         try:
             # write parquet directories
@@ -69,7 +69,6 @@ class TestADLSDataset(ADLSTestBase):
             )
         finally:
             pass
-
 
     def test_adls_dataset_from_deltalake_nopart(self):
         dataset = self._adls_object_storage.dataset(

@@ -5,9 +5,10 @@ from fsspec.implementations.local import LocalFileSystem
 # from pyarrow.fs import LocalFileSystem
 
 from cloud.local.local import LocalFileSystemStorage
+from tests.core.base_test import TestBase
 
 
-class LocalFilesystemTestBase(unittest.TestCase):
+class LocalFilesystemTestBase(TestBase):
 
     _local_filesystem_storage = None
     _filesystem: LocalFileSystem = LocalFileSystem()
