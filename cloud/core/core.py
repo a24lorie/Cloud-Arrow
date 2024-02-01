@@ -457,7 +457,82 @@ class AbstractStorage(metaclass=ABCMeta):
             filters=filters
         ).to_pandas()
 
-    def write(self, table, file_format, path, write_options: WriteOptions):
+    def write(self, data, file_format, path, write_options: WriteOptions):
+        """
+        :param data: pandas.DataFrame, pyarrow.Dataset, Table/RecordBatch, RecordBatchReader, list of \
+                    Table/RecordBatch, or iterable of RecordBatch
+
+        :param file_format: str
+            Currently "parquet", "deltalake" supported.
+        :param path: str
+            Path pointing to a single file:
+                Open a Dataset from a single file.
+            Path pointing to a directory:
+                The directory gets discovered recursively according to a
+                partitioning scheme if given.
+        :param write_options:
+        """
+
+        def convert_pandas_to_arrow_table(dataframe):
+            if isinstance(dataframe, pd.DataFrame):
+                return pa.Table.from_pandas(dataframe)
+            else:
+                raise TypeError(f"The parameter 'table' type must be one of [pandas.DataFrame, pyarrow.Table]")
+
+        self._validate_format(file_format=file_format)
+
+        try:
+            pyarr_data = convert_pandas_to_arrow_table(data)
+        except TypeError:
+            pyarr_data = data
+
+        filesystem = self._get_filesystem()
+
+        if file_format == "parquet":
+            self._logger.debug(f""" Write to Dataset: 
+                                   root_path: '{self._get_filesystem_base_path(path=path)}'
+                                   filesystem: {type(filesystem)}
+                                   file_format:{write_options.compression_codec}
+                                   existing_data_behavior:{write_options.existing_data_behavior}
+                                   partition_cols: {write_options.partitions}
+                               """)
+
+            pa.dataset.write_dataset(
+                data=pyarr_data,
+                format=file_format,
+                filesystem=filesystem,
+                base_dir=self._get_filesystem_base_path(path=path),
+                partitioning=write_options.partitions,
+                existing_data_behavior=write_options.existing_data_behavior(),
+                file_options=ds.ParquetFileFormat().make_write_options(
+                    compression=write_options.compression_codec
+                )
+            )
+
+            # pq.write_to_dataset(
+            #     pyarr_data,
+            #     root_path=self._get_filesystem_base_path(path=path),
+            #     filesystem=filesystem,
+            #     compression=write_options.compression_codec,
+            #     existing_data_behavior=write_options.existing_data_behavior(),
+            #     partition_cols=write_options.partitions,
+            #
+            # )
+        elif file_format == "deltalake":
+            write_deltalake(
+                table_or_uri=self._get_deltalake_url(path=path),
+                data=pyarr_data,
+                partition_by=write_options.partitions,
+                file_options=ds.ParquetFileFormat().make_write_options(
+                    compression=write_options.compression_codec
+                ),
+                storage_options=self._get_deltalake_storage_options(),
+                mode=write_options.existing_data_behavior()
+            )
+
+
+
+    def write_batch(self, batch, file_format, path, write_options: WriteOptions):
         """
         :param table
 
@@ -471,44 +546,3 @@ class AbstractStorage(metaclass=ABCMeta):
                 partitioning scheme if given.
         :param write_options:
         """
-
-        def convert_to_arrow_table(table) -> pa.Table:
-            if isinstance(table, pd.DataFrame):
-                return pa.Table.from_pandas(table)
-            elif isinstance(table, pa.Table):
-                return table
-            else:
-                raise f"The parameter 'table' type must be one of [pandas.DataFrame, pyarrow.Table]"
-
-        self._validate_format(file_format=file_format)
-        pyarr_table = convert_to_arrow_table(table)
-        filesystem = self._get_filesystem()
-
-        if file_format == "parquet":
-            self._logger.debug(f""" Write to Dataset: 
-                                   root_path: '{self._get_filesystem_base_path(path=path)}'
-                                   filesystem: {type(filesystem)}
-                                   file_format:{write_options.compression_codec}
-                                   existing_data_behavior:{write_options.existing_data_behavior}
-                                   partition_cols: {write_options.partitions}
-                               """)
-
-            pq.write_to_dataset(
-                pyarr_table,
-                root_path=self._get_filesystem_base_path(path=path),
-                filesystem=filesystem,
-                compression=write_options.compression_codec,
-                existing_data_behavior=write_options.existing_data_behavior(),
-                partition_cols=write_options.partitions
-            )
-        elif file_format == "deltalake":
-            write_deltalake(
-                table_or_uri=self._get_deltalake_url(path=path),
-                data=table,
-                partition_by=write_options.partitions,
-                file_options=ds.ParquetFileFormat().make_write_options(
-                    compression=write_options.compression_codec
-                ),
-                storage_options=self._get_deltalake_storage_options(),
-                mode=write_options.existing_data_behavior()
-            )
