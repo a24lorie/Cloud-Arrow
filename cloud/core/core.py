@@ -332,8 +332,8 @@ class AbstractStorage(metaclass=ABCMeta):
                      file_format: str,
                      path: str,
                      partitioning: str = "hive",
-                     batch_size: int = 1000,
-                     filters=None) -> pa.RecordBatch:
+                     filters=None,
+                     batch_size: int = 1000) -> pa.RecordBatch:
         """
         Read the dataset as materialized record batches.
 
@@ -508,16 +508,6 @@ class AbstractStorage(metaclass=ABCMeta):
                     compression=write_options.compression_codec
                 )
             )
-
-            # pq.write_to_dataset(
-            #     pyarr_data,
-            #     root_path=self._get_filesystem_base_path(path=path),
-            #     filesystem=filesystem,
-            #     compression=write_options.compression_codec,
-            #     existing_data_behavior=write_options.existing_data_behavior(),
-            #     partition_cols=write_options.partitions,
-            #
-            # )
         elif file_format == "deltalake":
             write_deltalake(
                 table_or_uri=self._get_deltalake_url(path=path),
