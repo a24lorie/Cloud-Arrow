@@ -332,8 +332,8 @@ class AbstractStorage(metaclass=ABCMeta):
                      file_format: str,
                      path: str,
                      partitioning: str = "hive",
-                     filters=None,
-                     batch_size: int = 1000) -> pa.RecordBatch:
+                     batch_size: int = 1000,
+                     filters=None) -> pa.RecordBatch:
         """
         Read the dataset as materialized record batches.
 

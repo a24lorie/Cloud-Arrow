@@ -35,7 +35,8 @@ GitHub: <https://github.com/a24lorie/Cloud-Arrow>
 # Using Cloud-Arrow
 
 The Cloud Arrow library provides an **Unified API** to read and write parquet files and delta-lake tables from the
-main cloud providers object storage. The cloud-arrow objects implementations for each cloud object storage service are:
+main cloud providers object storage and the local filesystem. 
+The current filesystem implementations are:
 
 ```
 AbstractStorage 
@@ -46,12 +47,12 @@ AbstractStorage
   └─── S3Storage (Future *)
 ```
 
-The first step when using the library is to create an instance of one of the implementations above, let's 
+When using the Cloud Arrow library the first step is to create an instance of one of the implementations above, let's 
 see some examples
 
 ## Azure ADLSGen2 
 
-To read and write from Azure ADLS Gen2 let's create an instance of ADLSStorage object providing the following arguments: 
+To read and write from Azure ADLS Gen2 create an instance of ADLSStorage object providing the following arguments: 
 
 1. **tentant_id***: (*Required*) - The Azure Tenant Id used in oauth flows 
 2. **client_id***: (*Required*) - Service principal client id for authorizing requests
@@ -76,7 +77,7 @@ object_storage = ADLSStorage(
 
 ## Google GCSFS  
 
-To read and write from Google GCSFS let's create an instance of GCSFSStorage object, by providing the following arguments: 
+To read and write from Google GCSFS create an instance of GCSFSStorage object, by providing the following arguments: 
 
 1. **project**: (*Required*) - Project id of the Google Cloud project  
 2. **access**: (*Required*) -  Access method to the file system (read_only, read_write or full_control)
@@ -117,7 +118,7 @@ You should be able to read, write, and delete objects from at least one bucket.
 
 ## Local Filesystem
 
-To read and write from the Local Filesystem let's create an instance of LocalFileSystemStorage object: 
+To read and write from the Local Filesystem create an instance of LocalFileSystemStorage object: 
 
 ``` python
 from cloud_arrow.local import LocalFileSystemStorage
@@ -126,11 +127,12 @@ object_storage = LocalFileSystemStorage()
 ```
 
 # Reading  Data
-Once created, let's use the object_storage to interact with the filesystem (ADLSGen2, GCSFS, Local Filesystem).
+Once created, use the instance to interact with the filesystem (ADLSGen2, GCSFS, Local Filesystem).
 
-The cloud arrow library API provides the following options to read parquet files or delta-lake tables:
+To achieve an unified and consistence experience when interacting with the different filesystem implementations the cloud 
+arrow library provides the following methods to read parquet files or delta-lake tables:
 
-* read_batches(file_format: str, path: str, partitioning: str, filters=None, batch_size: int) -> pa.RecordBatch
+* read_batches(file_format: str, path: str, partitioning: str, batch_size: int, filters=None) -> pa.RecordBatch
 * read_to_arrow_table(file_format: str, path: str, partitioning: str, filters=None) -> pa.Table
 * read_to_pandas(file_format: str, path: str, partitioning: str, filters=None) -> DataFrame
 * dataset(file_format: str, path: str, partitioning: str) -> ds.Dataset
