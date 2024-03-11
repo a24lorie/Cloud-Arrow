@@ -332,8 +332,8 @@ class AbstractStorage(metaclass=ABCMeta):
                      file_format: str,
                      path: str,
                      partitioning: str = "hive",
-                     batch_size: int = 1000,
-                     filters=None) -> pa.RecordBatch:
+                     filters=None,
+                     batch_size: int = 1000) -> pa.RecordBatch:
         """
         Read the dataset as materialized record batches.
 
@@ -350,17 +350,17 @@ class AbstractStorage(metaclass=ABCMeta):
         :param partitioning: Partitioning, PartitioningFactory, str, list of str default "hive"
             The partitioning scheme specified with the ``partitioning()``
             function. A flavor string can be used as shortcut, and with a list of
-            field names a DirectionaryPartitioning will be inferred.
-        :param batch_size:  int, default 16
-            The number of batches to read ahead in a file. This might not work
-            for all file formats. Increasing this number will increase
-            RAM usage but could also improve IO utilization.
+            field names a Dictionary Partitioning will be inferred.
         :param filters: Expression, default None
             Scan will return only the rows matching the filter.
             If possible the predicate will be pushed down to exploit the
             partition information or internal metadata found in the data
-            source, e.g. Parquet statistics. Otherwise filters the loaded
+            source, e.g. Parquet statistics. Otherwise, filters the loaded
             RecordBatches before yielding them.
+        :param batch_size:  int, default 1000
+            The number of batches to read ahead in a file. This might not work
+            for all file formats. Increasing this number will increase
+            RAM usage but could also improve IO utilization.
         :return:
             record_batches : iterator of RecordBatch
         """
