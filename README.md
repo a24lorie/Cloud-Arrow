@@ -127,17 +127,16 @@ object_storage = LocalFileSystemStorage()
 ```
 
 ## Reading  Data
-Once created, use the use the **object_storage** instance to interact with the filesystem (ADLSGen2, GCSFS, Local Filesystem).
-
-To achieve an unified and consistence experience when interacting with the different filesystem implementations the cloud 
-arrow library provides the following methods to read parquet files or delta-lake tables:
+To read files from ADLSGen2, GCSFS or the Local Filesystem use the **object_storage** instance configured. 
+The Cloud Arrow library provides an unified and consistence experience across all the filesystem implementations 
+to read parquet files or delta-lake tables, the following methods are available for reading:
 
 * read_batches(file_format: str, path: str, partitioning: str, filters=None, batch_size: int) -> pa.RecordBatch
 * read_to_arrow_table(file_format: str, path: str, partitioning: str, filters=None) -> pa.Table
 * read_to_pandas(file_format: str, path: str, partitioning: str, filters=None) -> DataFrame
 * dataset(file_format: str, path: str, partitioning: str) -> ds.Dataset
 
-Let's see some examples for each
+Let's take a look at some examples 
 
 ### Read from parquet file or delta table to an Arrow Record Batch
 
@@ -149,8 +148,8 @@ read_batches(file_format: str, path: str, partitioning: str, filters=None, batch
 
 ``` python
            
-batches_parquet = adls_object_storage.read_batches(file_format="parquet", path="path_to_parquet", batch_size=2000)
-batches_delta = adls_object_storage.read_batches(file_format="deltalake", path="path_to_deltalake", batch_size=2000) 
+batches_parquet = object_storage.read_batches(file_format="parquet", path="path_to_parquet", batch_size=2000)
+batches_delta = object_storage.read_batches(file_format="deltalake", path="path_to_deltalake", batch_size=2000) 
 
 for batch_parquet in batches_parquet:
    count_parquet += batch_parquet.num_rows
@@ -202,12 +201,12 @@ See [pyarrow filter](https://arrow.apache.org/docs/python/generated/pyarrow.parq
 ``` python
 import pyarrow.dataset as ds
 
-batches_parquet_batch = adls_object_storage.read_batches(
+batches_parquet_batch = object_storage.read_batches(
                                              file_format="parquet", 
                                              path="path_to_parquet", 
                                              filters=(ds.field("FieldName") == 0),
                                              batch_size=2000)
-batches_delta_batch = adls_object_storage.read_batches(
+batches_delta_batch = object_storage.read_batches(
                                              file_format="deltalake", 
                                              path="path_to_deltalake", 
                                              filters=(ds.field("FieldName") == 0),
@@ -252,120 +251,132 @@ result_delta_df = object_storage.read_to_pandas(
 print(result_parquet_df.info())
 print(result_delta_df.info())
 ```
-Use the adls_object_storage object created and call the write method to save the dataset in parquet or deltalake format to ADLSGen2 by specifying::
 
 ## Writing Data
-To write data use the **object_storage** instance to interact with the filesystem (ADLSGen2, GCSFS, Local Filesystem).
+To write files to ADLSGen2, GCSFS or the Local Filesystem use the **object_storage** instance configured. 
+The Cloud Arrow library provides an unified and consistence experience across all the filesystem implementations 
+to write parquet files or delta-lake tables, the following method is available for writing:
 
-The cloud arrow library API provides the following method to write parquet files or delta-lake tables:
-
-write(data, file_format, path, write_options: WriteOptions)
+* write(data, file_format, path, write_options: WriteOptions)
 1. **data**: (*Required*) - Can be one of pandas.DataFrame, pyarrow.Dataset, Table/RecordBatch, RecordBatchReader, list of \
                    Table/RecordBatch, or iterable of RecordBatch 
 2. **file_format**: (*Required*) - Can be one of "parquet" or "deltalake"
 3. **path**:  (*Required*)  - The object storage location to the dataset (can be a single file name or directory name)
 4. **write_options** - Required - Options to write the files including: 
-   1. ***partitions*** : Allows to specify which columns to use to split the dataset.
-   2. ***compression_codec***: Allow to specify the compression codec (None, snappy, sz4, brotli, gzip, zstd)
-   3. ***existing_data_behavior***:  Allows to specify how to handle data that already exists in the destination. 
+    ```
+    WriteOptions 
+    |     * partitions: List of the names of columns to split the dataset. 
+    |     * compression_codec: Allow to specify the compression codec (None, snappy, sz4, brotli, gzip, zstd)
+    └─── ParquetWriteOptions
+            *  existing_data_behavior: Can be one of ['error', 'overwrite_or_ignore', 'delete_matching']              
+    └─── DeltaLakeWriteOptions
+            *  existing_data_behavior: Can be one of [['error', 'append', 'overwrite', 'ignore']]
+    ```
 
-   
+Let's take a look at some examples 
+
+### Write parquet file or delta table without partitions and without compression and overwrite source 
+ 
 ``` python
 # Example writing parquet
-adls_object_storage.write(
-                    table=table,
-                    file_format="parquet",
-                    path=path,
-                    write_options=ParquetWriteOptions(
-                        partitions=["col1", "col2", ...],
-                        compression_codec="snappy",
-                        existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
-                    )
+object_storage.write(
+                table=table,
+                file_format="parquet",
+                path=path,
+                write_options=ParquetWriteOptions(
+                    compression_codec="None",
+                    existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
+                )
                     
 # Example writing deltalake
-adls_object_storage.write(
-                    table=table,
-                    file_format="deltalake",
-                    path=path,
-                    write_options=DeltaLakeWriteOptions(
-                        partitions=["col1", "col2", ...],
-                        compression_codec="snappy",
-                        existing_data_behavior="overwrite") # 'error', 'append', 'overwrite', 'ignore'
-                    )
+object_storage.write(
+                table=table,
+                file_format="deltalake",
+                path=path,
+                write_options=DeltaLakeWriteOptions(
+                    compression_codec="None",
+                    existing_data_behavior="overwrite") # 'error', 'append', 'overwrite', 'ignore'
+                )
           
 ```
-        
-Use the gcsfs_object_storage object created and call the read_to_pandas method to retrieve files in a pandas DataFrame by specifying:
 
-1. **file_format**: Required - can be on of "parquet" or "deltalake"
-2. **path**: Required - The object storage location to the dataset (can be a single file name or directory name)
-3. **filters**: Optional - pyarrow.compute.Expression or List[Tuple] or List[List[Tuple]]. See [pyarrow filter](https://arrow.apache.org/docs/python/generated/pyarrow.parquet.ParquetDataset.html) for more details
-
-``` python
-resultParquet = gcsfs_object_storage.read_to_pandas(file_format="parquet", path="path_to_parquet")
-resultDelta = gcsfs_object_storage.read_to_pandas(file_format="deltalake", path="path_to_deltalake") 
-
-print(resultParquet.info())
-print(resultDelta.info())
-```
-
-## Writing to GCSFS
-
-When creating a cloud-arrow writer to Google Cloud Storage create an instance of GCSFSObjectStorage with the arguments:
-
- 1. **project** Required - Project id of the Google Cloud project 
- 2. **access**: Required - Access method to the file system (read_only, read_write or full_control)
- 3. **token**: Required - Authentication method for Google Cloud Storage (None, google_default, cache, anon, browser, cloud or credentials filename path). 
-      See [GCSFileSystem](https://gcsfs.readthedocs.io/en/latest/api.html#gcsfs.core.GCSFileSystem) for more details.
- 4. **bucket**: Required - Name of the bucket or container that hold the data.
- 5. **default_location**: Optional - Default location where buckets are created.
-
-``` python
-from cloud_arrow.gcsfs import GCSFSObjectStorage
-from cloud_arrow.core import DeltaLakeWriteOptions
-from cloud_arrow.core import ParquetWriteOptions
-
-gcsfs_object_storage = GCSFSObjectStorage(
-    project="GCSFSProjectId",
-    access="read_only",
-    bucket="GCSFSBucket",
-    token="/path/google-secret.json",
-    default_location=""
-)
-```
-
-Use the gcsfs_object_storage object created and call the write method to save the dataset in parquet or deltalake format to GCSFS by specifying::
-
-1. **table**: Required - pandas DataFrame or Arrow Table  
-2. **file_format**: Required -  Required - can be on of "parquet" or "deltalake"
-3. **path**: Required - The object storage location to store the dataset
-4. **write_options**: Required - Options to write the files including: 
-   1. ***partitions*** : Allows to specify which columns to use to split the dataset.
-   2. ***compression_codec***: Allow to specify the compression codec (None, snappy, sz4, brotli, gzip, zstd)
-   3. ***existing_data_behavior***:  Allows to specify how to handle data that already exists in the destination.
-
+### Write parquet file or delta table partitioned with "snappy" compression and overwrite source 
+ 
 ``` python
 # Example writing parquet
-gcsfs_object_storage.write(
-                    table=table,
-                    file_format="parquet",
-                    path=path,
-                    write_options=ParquetWriteOptions(
-                        partitions=["col1", "col2", ...],
-                        compression_codec="snappy",
-                        existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
-                    )
+object_storage.write(
+                table=table,
+                file_format="parquet",
+                path=path,
+                write_options=ParquetWriteOptions(
+                    partitions=["col1", "col2"],
+                    compression_codec="snappy",
+                    existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
+                )
                     
 # Example writing deltalake
-gcsfs_object_storage.write(
-                    table=table,
-                    file_format="deltalake",
-                    path=path,
-                    write_options=DeltaLakeWriteOptions(
-                        partitions=["col1", "col2", ...],
-                        compression_codec="snappy",
-                        existing_data_behavior="overwrite") # 'error', 'append', 'overwrite', 'ignore'
-                    )
+object_storage.write(
+                table=table,
+                file_format="deltalake",
+                path=path,
+                write_options=DeltaLakeWriteOptions(
+                    partitions=["col1", "col2"],
+                    compression_codec="snappy",
+                    existing_data_behavior="overwrite") # 'error', 'append', 'overwrite', 'ignore'
+                )
+          
+```
+
+### Write parquet file or delta table without partitions and without compression and overwrite source in batches
+ 
+``` python
+# Example writing parquet
+object_storage.write(
+                table=table,
+                file_format="parquet",
+                path=path,
+                write_options=ParquetWriteOptions(
+                    compression_codec="None",
+                    existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
+                )
+                    
+# Example writing deltalake
+object_storage.write(
+                table=table,
+                file_format="deltalake",
+                path=path,
+                write_options=DeltaLakeWriteOptions(
+                    compression_codec="None",
+                    existing_data_behavior="overwrite") # 'error', 'append', 'overwrite', 'ignore'
+                )
+          
+```
+
+### Write parquet file or delta table partitioned with "snappy" compression and overwrite source in batches
+ 
+``` python
+# Example writing parquet
+object_storage.write(
+                table=table,
+                file_format="parquet",
+                path=path,
+                write_options=ParquetWriteOptions(
+                    partitions=["col1", "col2"],
+                    compression_codec="snappy",
+                    existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
+                )
+                    
+# Example writing deltalake
+object_storage.write(
+                table=table,
+                file_format="deltalake",
+                path=path,
+                write_options=DeltaLakeWriteOptions(
+                    partitions=["col1", "col2"],
+                    compression_codec="snappy",
+                    existing_data_behavior="overwrite") # 'error', 'append', 'overwrite', 'ignore'
+                )
+          
 ```
 
 # Contributing
