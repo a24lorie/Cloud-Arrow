@@ -12,6 +12,9 @@ class LocalFilesystemTestBase(TestBase):
 
     _local_filesystem_storage = None
     _filesystem: LocalFileSystem = LocalFileSystem()
+    _base_path = None
+    _test_table = None
+    _fixed_table = None
 
     @classmethod
     def setUpClass(cls):
@@ -19,3 +22,12 @@ class LocalFilesystemTestBase(TestBase):
 
         # Create the writer object
         cls._local_filesystem_storage = LocalFileSystemStorage()
+
+        cls._base_path = "./write/diabetes"
+        cls._test_table = cls.make_mock_diabetes_arrow_table(random=True)
+        cls._fixed_table = cls.make_mock_diabetes_arrow_table(random=False)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Remove write directory recursively
+        cls._filesystem.delete(f"{cls._base_path}", recursive=True)
