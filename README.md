@@ -275,12 +275,12 @@ to write parquet files or delta-lake tables, the following method is available f
 
 Let's take a look at some examples 
 
-### Write parquet file or delta table without partitions and without compression and overwrite source 
+### Write parquet file or delta table without partitions nor compression and overwrite source 
  
 ``` python
 # Example writing parquet
 object_storage.write(
-                table=table,
+                data=table,
                 file_format="parquet",
                 path=path,
                 write_options=ParquetWriteOptions(
@@ -290,7 +290,7 @@ object_storage.write(
                     
 # Example writing deltalake
 object_storage.write(
-                table=table,
+                data=table,
                 file_format="deltalake",
                 path=path,
                 write_options=DeltaLakeWriteOptions(
@@ -305,7 +305,7 @@ object_storage.write(
 ``` python
 # Example writing parquet
 object_storage.write(
-                table=table,
+                data=table,
                 file_format="parquet",
                 path=path,
                 write_options=ParquetWriteOptions(
@@ -316,7 +316,7 @@ object_storage.write(
                     
 # Example writing deltalake
 object_storage.write(
-                table=table,
+                data=table,
                 file_format="deltalake",
                 path=path,
                 write_options=DeltaLakeWriteOptions(
@@ -327,56 +327,118 @@ object_storage.write(
           
 ```
 
-### Write parquet file or delta table without partitions and without compression and overwrite source in batches
+### Write parquet file or delta table without partitions nor compression and overwrite source in batches
  
 ``` python
-# Example writing parquet
+schema = pa.schema([
+                ("Pregnancies", pa.int64()),
+                ("Glucose", pa.int64()),
+                ("BloodPressure", pa.int64()),
+                ("SkinThickness", pa.int64()),
+                ("Insulin", pa.int64()),
+                ("BMI", pa.float64()),
+                ("DiabetesPedigreeFunction", pa.float64()),
+                ("Age", pa.int64()),
+                ("Outcome", pa.int64())]
+        )
+        
+pregnancies = pa.array(numpy.random.randint(low=0, high=17, size=5))
+glucose = pa.array(numpy.random.randint(low=0, high=199, size=5))
+blood_pressure = pa.array(numpy.random.randint(low=0, high=122, size=5))
+skin_thickness = pa.array(numpy.random.randint(low=0, high=99, size=5))
+insulin = pa.array(numpy.random.randint(low=0, high=846, size=5))
+bmi = pa.array(numpy.random.uniform(0.0, 67.1, size=5))
+diabetes_pedigree_function = pa.array(numpy.random.uniform(0.08, 2.42, size=5))
+age = pa.array(numpy.random.randint(low=21, high=81, size=5))
+outcome = pa.array(numpy.random.randint(low=0, high=1, size=5))
+
+def iter_record_batches():
+    for i in range(5):
+        yield pa.RecordBatch.from_arrays([
+            pregnancies, glucose, blood_pressure, skin_thickness,
+            insulin, bmi, diabetes_pedigree_function, age, outcome
+        ], schema=schema)
+
+batch_reader = pa.RecordBatchReader.from_batches(schema, iter_record_batches())
+        
+# Example writing parquet in batches  
 object_storage.write(
-                table=table,
-                file_format="parquet",
-                path=path,
-                write_options=ParquetWriteOptions(
-                    compression_codec="None",
-                    existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
-                )
+             data=batch_reader,
+             file_format="parquet",
+             path=path,
+             write_options=ParquetWriteOptions(
+                 partitions=[],
+                 compression_codec="None",
+                 existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
+             )
                     
-# Example writing deltalake
+# Example writing deltalake in batches
 object_storage.write(
-                table=table,
-                file_format="deltalake",
-                path=path,
-                write_options=DeltaLakeWriteOptions(
-                    compression_codec="None",
-                    existing_data_behavior="overwrite") # 'error', 'append', 'overwrite', 'ignore'
-                )
-          
+             data=batch_reader,
+             file_format="deltalake",
+             path=path,
+             write_options=ParquetWriteOptions(
+                 partitions=[],
+                 compression_codec="None",
+                 existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
+             )  
 ```
 
 ### Write parquet file or delta table partitioned with "snappy" compression and overwrite source in batches
  
 ``` python
-# Example writing parquet
+schema = pa.schema([
+                ("Pregnancies", pa.int64()),
+                ("Glucose", pa.int64()),
+                ("BloodPressure", pa.int64()),
+                ("SkinThickness", pa.int64()),
+                ("Insulin", pa.int64()),
+                ("BMI", pa.float64()),
+                ("DiabetesPedigreeFunction", pa.float64()),
+                ("Age", pa.int64()),
+                ("Outcome", pa.int64())]
+        )
+        
+pregnancies = pa.array(numpy.random.randint(low=0, high=17, size=5))
+glucose = pa.array(numpy.random.randint(low=0, high=199, size=5))
+blood_pressure = pa.array(numpy.random.randint(low=0, high=122, size=5))
+skin_thickness = pa.array(numpy.random.randint(low=0, high=99, size=5))
+insulin = pa.array(numpy.random.randint(low=0, high=846, size=5))
+bmi = pa.array(numpy.random.uniform(0.0, 67.1, size=5))
+diabetes_pedigree_function = pa.array(numpy.random.uniform(0.08, 2.42, size=5))
+age = pa.array(numpy.random.randint(low=21, high=81, size=5))
+outcome = pa.array(numpy.random.randint(low=0, high=1, size=5))
+
+def iter_record_batches():
+    for i in range(5):
+        yield pa.RecordBatch.from_arrays([
+            pregnancies, glucose, blood_pressure, skin_thickness,
+            insulin, bmi, diabetes_pedigree_function, age, outcome
+        ], schema=schema)
+
+batch_reader = pa.RecordBatchReader.from_batches(schema, iter_record_batches())
+        
+# Example writing parquet in batches  
 object_storage.write(
-                table=table,
-                file_format="parquet",
-                path=path,
-                write_options=ParquetWriteOptions(
-                    partitions=["col1", "col2"],
-                    compression_codec="snappy",
-                    existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
-                )
+             data=batch_reader,
+             file_format="parquet",
+             path=path,
+             write_options=ParquetWriteOptions(
+                 partitions=[],
+                 compression_codec="snappy",
+                 existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
+             )
                     
-# Example writing deltalake
+# Example writing deltalake in batches
 object_storage.write(
-                table=table,
-                file_format="deltalake",
-                path=path,
-                write_options=DeltaLakeWriteOptions(
-                    partitions=["col1", "col2"],
-                    compression_codec="snappy",
-                    existing_data_behavior="overwrite") # 'error', 'append', 'overwrite', 'ignore'
-                )
-          
+             data=batch_reader,
+             file_format="deltalake",
+             path=path,
+             write_options=ParquetWriteOptions(
+                 partitions=[],
+                 compression_codec="snappy",
+                 existing_data_behavior="overwrite_or_ignore") # 'error', 'overwrite_or_ignore', 'delete_matching'
+             )       
 ```
 
 # Contributing

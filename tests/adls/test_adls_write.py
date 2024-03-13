@@ -62,13 +62,13 @@ class TestADLSWrite(ADLSTestBase):
 
         # write the table to local filesystem
         self._adls_object_storage.write(data=batch_reader,
-                                             file_format="parquet",
-                                             path=f"{self._base_path}/parquet/test_nocompression_batch_reader",
-                                             write_options=ParquetWriteOptions(
-                                                 partitions=[],
-                                                 compression_codec="None",
-                                                 existing_data_behavior="overwrite_or_ignore")
-                                             )
+                                         file_format="parquet",
+                                         path=f"{self._base_path}/parquet/test_nocompression_batch_reader",
+                                         write_options=ParquetWriteOptions(
+                                             partitions=[],
+                                             compression_codec="None",
+                                             existing_data_behavior="overwrite_or_ignore")
+                                         )
 
         self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/parquet/test_nocompression_batch_reader")
         self.validate_compression(path=f"{self._container_name}/{self._base_path}/parquet/test_nocompression_batch_reader",
