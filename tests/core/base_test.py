@@ -4,6 +4,7 @@ import numpy
 import pandas as pd
 import pyarrow as pa
 from dotenv import load_dotenv
+import pyarrow.parquet as pq
 
 
 class TestBase(unittest.TestCase):
@@ -81,3 +82,21 @@ class TestBase(unittest.TestCase):
             return pa.Table.from_batches(batches=cls.mock_random_diabetes_arrow_batchReader())
         else:
             return pa.Table.from_batches(batches=cls.mock_static_diabetes_arrow_batchReader())
+
+    def validate_compression(self, path, compression):
+        try:
+            paths = self._filesystem.ls(path=path)
+
+            for path in paths:
+                # print(path)
+                # read the file metadata
+                if not self._filesystem.isdir(path):
+                    metadata = pq.read_metadata(
+                        where=f"{path}",
+                        filesystem=self._filesystem
+                    )
+                    compression_type = metadata.row_group(0).column(0).compression
+                    print(f"Filename: {path}, compression_type: {compression_type}")
+                    assert (compression_type == compression)
+        finally:
+            pass

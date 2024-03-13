@@ -1,8 +1,7 @@
 import unittest
 
-import pandas as pd
 import pyarrow.parquet as pq
-from adlfs import AzureBlobFileSystem
+import pyarrow.dataset as ds
 
 from cloud.core import ParquetWriteOptions, DeltaLakeWriteOptions
 from tests.core import ADLSTestBase
@@ -19,15 +18,16 @@ class TestADLSWrite(ADLSTestBase):
     def setUpClass(cls):
         ADLSTestBase.setUpClass()
 
-        cls._base_path = "write"
-        cls._test_table = cls.make_mock_diabetes_arrow_table()
-
     @classmethod
     def tearDownClass(cls):
         # Remove write directory recursively
         cls._delete_adls_dir(f"{cls._base_path}")
 
-    def test_adls_write_parquet_nopart_no_compression(self):
+    def validate_number_of_records(self, path):
+        table_rows = ds.dataset(source=f"{path}", filesystem=self._filesystem).count_rows()
+        assert (table_rows == 25)
+
+    def test_adls_write_parquet_nopart_no_compression_from_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="parquet",
@@ -38,25 +38,43 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite_or_ignore")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_nocompression")
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/parquet/test_nocompression")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/parquet/test_nocompression",
+                                  compression='UNCOMPRESSED')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                metadata = pq.read_metadata(
-                    where=f"{self._container_name}/{path['name']}",
-                    filesystem=self._filesystem
-                )
-                compression_type = metadata.row_group(0).column(0).compression
-                print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                assert (compression_type == 'UNCOMPRESSED')
+    def test_adls_write_parquet_nopart_no_compression_from_arrow_pandas(self):
+        # write the table to local filesystem
+        self._adls_object_storage.write(data=self._test_table.to_pandas(),
+                                             file_format="parquet",
+                                             path=f"{self._base_path}/parquet/test_nocompression_pandas",
+                                             write_options=ParquetWriteOptions(
+                                                 partitions=[],
+                                                 compression_codec="None",
+                                                 existing_data_behavior="overwrite_or_ignore")
+                                             )
 
-        finally:
-            pass
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/parquet/test_nocompression_pandas")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/parquet/test_nocompression_pandas",
+                                  compression='UNCOMPRESSED')
 
-    def test_adls_write_parquet_nopart_snappy(self):
+    def test_adls_write_parquet_nopart_no_compression_from_arrow_recordBatches(self):
+        batch_reader = self.mock_random_diabetes_arrow_batchReader()
+
+        # write the table to local filesystem
+        self._adls_object_storage.write(data=batch_reader,
+                                             file_format="parquet",
+                                             path=f"{self._base_path}/parquet/test_nocompression_batch_reader",
+                                             write_options=ParquetWriteOptions(
+                                                 partitions=[],
+                                                 compression_codec="None",
+                                                 existing_data_behavior="overwrite_or_ignore")
+                                             )
+
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/parquet/test_nocompression_batch_reader")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/parquet/test_nocompression_batch_reader",
+                                  compression='UNCOMPRESSED')
+
+    def test_adls_write_parquet_nopart_snappy_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="parquet",
@@ -67,24 +85,11 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite_or_ignore")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_snappy")
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/parquet/test_snappy")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/parquet/test_snappy",
+                                  compression='SNAPPY')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                metadata = pq.read_metadata(
-                    where=f"{self._container_name}/{path['name']}",
-                    filesystem=self._filesystem
-                )
-                compression_type = metadata.row_group(0).column(0).compression
-                print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                assert (compression_type == 'SNAPPY')
-        finally:
-            pass
-
-    def test_adls_write_parquet_nopart_gzip(self):
+    def test_adls_write_parquet_nopart_gzip_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="parquet",
@@ -95,24 +100,11 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite_or_ignore")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_gzip")
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/parquet/test_gzip")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/parquet/test_gzip",
+                                  compression='GZIP')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                metadata = pq.read_metadata(
-                    where=f"{self._container_name}/{path['name']}",
-                    filesystem=self._filesystem
-                )
-                compression_type = metadata.row_group(0).column(0).compression
-                print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                assert (compression_type == 'GZIP')
-        finally:
-            pass
-
-    def test_adls_write_parquet_nopart_brotli(self):
+    def test_adls_write_parquet_nopart_brotli_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="parquet",
@@ -123,24 +115,11 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite_or_ignore")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_brotli")
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/parquet/test_brotli")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/parquet/test_brotli",
+                                  compression='BROTLI')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                metadata = pq.read_metadata(
-                    where=f"{self._container_name}/{path['name']}",
-                    filesystem=self._filesystem
-                )
-                compression_type = metadata.row_group(0).column(0).compression
-                print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                assert (compression_type == 'BROTLI')
-        finally:
-            pass
-
-    def test_adls_write_parquet_nopart_zstd(self):
+    def test_adls_write_parquet_nopart_zstd_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="parquet",
@@ -151,24 +130,11 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite_or_ignore")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_zstd")
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/parquet/test_zstd")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/parquet/test_zstd",
+                                  compression='ZSTD')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                metadata = pq.read_metadata(
-                    where=f"{self._container_name}/{path['name']}",
-                    filesystem=self._filesystem
-                )
-                compression_type = metadata.row_group(0).column(0).compression
-                print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                assert (compression_type == 'ZSTD')
-        finally:
-            pass
-
-    def test_adls_write_parquet_nopart_lz4(self):
+    def test_adls_write_parquet_nopart_lz4_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="parquet",
@@ -179,24 +145,11 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite_or_ignore")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/parquet/test_lz4")
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/parquet/test_lz4")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/parquet/test_lz4",
+                                  compression='LZ4')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                metadata = pq.read_metadata(
-                    where=f"{self._container_name}/{path['name']}",
-                    filesystem=self._filesystem
-                )
-                compression_type = metadata.row_group(0).column(0).compression
-                print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                assert (compression_type == 'LZ4')
-        finally:
-            pass
-
-    def test_adls_write_deltalake_nopart_no_compression(self):
+    def test_adls_write_deltalake_nopart_no_compression_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="deltalake",
@@ -207,27 +160,43 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_nocompression", recursive=False)
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/deltalake/test_nocompression")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/deltalake/test_nocompression",
+                                  compression='UNCOMPRESSED')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                if not path.is_directory:
-                    metadata = pq.read_metadata(
-                        where=f"{self._container_name}/{path['name']}",
-                        filesystem=self._filesystem
-                    )
+    def test_adls_write_deltalake_nopart_no_compression_from_arrow_pandas(self):
+        # write the table to local filesystem
+        self._adls_object_storage.write(data=self._test_table.to_pandas(),
+                                             file_format="deltalake",
+                                             path=f"{self._base_path}/deltalake/test_nocompression_pandas",
+                                             write_options=ParquetWriteOptions(
+                                                 partitions=[],
+                                                 compression_codec="None",
+                                                 existing_data_behavior="overwrite_or_ignore")
+                                             )
 
-                    compression_type = metadata.row_group(0).column(0).compression
-                    print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                    assert (compression_type == 'UNCOMPRESSED')
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/deltalake/test_nocompression_pandas")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/deltalake/test_nocompression_pandas",
+                                  compression='UNCOMPRESSED')
 
-        finally:
-            pass
+    def test_adls_write_deltalake_nopart_no_compression_from_arrow_recordBatches(self):
+        batch_reader = self.mock_random_diabetes_arrow_batchReader()
 
-    def test_adls_write_deltalake_nopart_snappy(self):
+        # write the table to local filesystem
+        self._adls_object_storage.write(data=batch_reader,
+                                             file_format="deltalake",
+                                             path=f"{self._base_path}/deltalake/test_nocompression_batch_reader",
+                                             write_options=ParquetWriteOptions(
+                                                 partitions=[],
+                                                 compression_codec="None",
+                                                 existing_data_behavior="overwrite_or_ignore")
+                                             )
+
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/deltalake/test_nocompression_batch_reader")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/deltalake/test_nocompression_batch_reader",
+                                  compression='UNCOMPRESSED')
+
+    def test_adls_write_deltalake_nopart_snappy_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="deltalake",
@@ -238,26 +207,11 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_snappy", recursive=False)
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/deltalake/test_snappy")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/deltalake/test_snappy",
+                                  compression='SNAPPY')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                if not path.is_directory:
-                    metadata = pq.read_metadata(
-                        where=f"{self._container_name}/{path['name']}",
-                        filesystem=self._filesystem
-                    )
-
-                    compression_type = metadata.row_group(0).column(0).compression
-                    print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                    assert (compression_type == 'SNAPPY')
-        finally:
-            pass
-
-    def test_adls_write_deltalake_nopart_gzip(self):
+    def test_adls_write_deltalake_nopart_gzip_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="deltalake",
@@ -268,26 +222,11 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_gzip", recursive=False)
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/deltalake/test_gzip")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/deltalake/test_gzip",
+                                  compression='GZIP')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                if not path.is_directory:
-                    metadata = pq.read_metadata(
-                        where=f"{self._container_name}/{path['name']}",
-                        filesystem=self._filesystem
-                    )
-
-                    compression_type = metadata.row_group(0).column(0).compression
-                    print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                    assert (compression_type == 'GZIP')
-        finally:
-            pass
-
-    def test_adls_write_deltalake_nopart_brotli(self):
+    def test_adls_write_deltalake_nopart_brotli_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="deltalake",
@@ -298,26 +237,11 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_brotli", recursive=False)
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/deltalake/test_brotli")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/deltalake/test_brotli",
+                                  compression='BROTLI')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                if not path.is_directory:
-                    metadata = pq.read_metadata(
-                        where=f"{self._container_name}/{path['name']}",
-                        filesystem=self._filesystem
-                    )
-
-                    compression_type = metadata.row_group(0).column(0).compression
-                    print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                    assert (compression_type == 'BROTLI')
-        finally:
-            pass
-
-    def test_adls_write_deltalake_nopart_zstd(self):
+    def test_adls_write_deltalake_nopart_zstd_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="deltalake",
@@ -328,26 +252,11 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_zstd", recursive=False)
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/deltalake/test_zstd")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/deltalake/test_zstd",
+                                  compression='ZSTD')
 
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                if not path.is_directory:
-                    metadata = pq.read_metadata(
-                        where=f"{self._container_name}/{path['name']}",
-                        filesystem=self._filesystem
-                    )
-
-                    compression_type = metadata.row_group(0).column(0).compression
-                    print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                    assert (compression_type == 'ZSTD')
-        finally:
-            pass
-
-    def test_adls_write_deltalake_nopart_lz4(self):
+    def test_adls_write_deltalake_nopart_lz4_arrow_table(self):
         # write the table to ADLS
         self._adls_object_storage.write(data=self._test_table,
                                         file_format="deltalake",
@@ -358,21 +267,6 @@ class TestADLSWrite(ADLSTestBase):
                                             existing_data_behavior="overwrite")
                                         )
 
-        try:
-            filesystem_client = self._get_filesystem_client()
-            paths = filesystem_client.get_paths(path=f"{self._base_path}/deltalake/test_lz4", recursive=False)
-
-            for path in paths:
-                # print(path)
-                # read the file metadata
-                if not path.is_directory:
-                    metadata = pq.read_metadata(
-                        where=f"{self._container_name}/{path['name']}",
-                        filesystem=self._filesystem
-                    )
-
-                    compression_type = metadata.row_group(0).column(0).compression
-                    print(f"Filename: {self._container_name}/{path['name']}, compression_type: {compression_type}")
-                    assert (compression_type == 'LZ4')
-        finally:
-            pass
+        self.validate_number_of_records(path=f"{self._container_name}/{self._base_path}/deltalake/test_lz4")
+        self.validate_compression(path=f"{self._container_name}/{self._base_path}/deltalake/test_lz4",
+                                  compression='LZ4')
