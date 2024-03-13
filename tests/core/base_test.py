@@ -1,8 +1,10 @@
 import unittest
 
 import numpy
+import pandas as pd
 import pyarrow as pa
 from dotenv import load_dotenv
+import pyarrow.parquet as pq
 
 
 class TestBase(unittest.TestCase):
@@ -12,7 +14,7 @@ class TestBase(unittest.TestCase):
         load_dotenv()
 
     @classmethod
-    def make_mock_diabetes_arrow_batchReader(cls) -> pa.RecordBatchReader:
+    def mock_random_diabetes_arrow_batchReader(cls) -> pa.RecordBatchReader:
         schema = pa.schema([
                 ("Pregnancies", pa.int64()),
                 ("Glucose", pa.int64()),
@@ -44,5 +46,57 @@ class TestBase(unittest.TestCase):
         return pa.RecordBatchReader.from_batches(schema, iter_record_batches())
 
     @classmethod
-    def make_mock_diabetes_arrow_table(cls) -> pa.Table:
-        return pa.Table.from_batches(cls.make_mock_diabetes_arrow_batchReader())
+    def mock_static_diabetes_arrow_batchReader(cls) -> pa.RecordBatchReader:
+        schema = pa.schema([
+            ("Pregnancies", pa.int64()),
+            ("Glucose", pa.int64()),
+            ("BloodPressure", pa.int64()),
+            ("SkinThickness", pa.int64()),
+            ("Insulin", pa.int64()),
+            ("BMI", pa.float64()),
+            ("DiabetesPedigreeFunction", pa.float64()),
+            ("Age", pa.int64()),
+            ("Outcome", pa.int64())]
+        )
+
+        def iter_record_batches():
+            with pd.read_csv("../data/diabetes/csv/nopart/diabetes.csv", chunksize=100) as reader:
+                for chunk in reader:
+                    yield pa.RecordBatch.from_arrays([
+                        chunk["Pregnancies"],
+                        chunk["Glucose"],
+                        chunk["BloodPressure"],
+                        chunk["SkinThickness"],
+                        chunk["Insulin"],
+                        chunk["BMI"],
+                        chunk["DiabetesPedigreeFunction"],
+                        chunk["Age"],
+                        chunk["Outcome"]
+                    ], schema=schema)
+
+        return pa.RecordBatchReader.from_batches(schema, iter_record_batches())
+
+    @classmethod
+    def make_mock_diabetes_arrow_table(cls, random=True) -> pa.Table:
+        if random:
+            return pa.Table.from_batches(batches=cls.mock_random_diabetes_arrow_batchReader())
+        else:
+            return pa.Table.from_batches(batches=cls.mock_static_diabetes_arrow_batchReader())
+
+    def validate_compression(self, path, compression):
+        try:
+            paths = self._filesystem.ls(path=path)
+
+            for path in paths:
+                # print(path)
+                # read the file metadata
+                if not self._filesystem.isdir(path):
+                    metadata = pq.read_metadata(
+                        where=f"{path}",
+                        filesystem=self._filesystem
+                    )
+                    compression_type = metadata.row_group(0).column(0).compression
+                    print(f"Filename: {path}, compression_type: {compression_type}")
+                    assert (compression_type == compression)
+        finally:
+            pass

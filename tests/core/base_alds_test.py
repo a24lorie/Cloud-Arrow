@@ -20,6 +20,10 @@ class ADLSTestBase(TestBase):
     _credentials = None
     _adls_object_storage = None
     _filesystem = None
+    _base_path = None
+    _test_table = None
+    _fixed_table = None
+
 
     @classmethod
     def setUpClass(cls):
@@ -52,6 +56,10 @@ class ADLSTestBase(TestBase):
             client_id=cls._client_id,
             client_secret=cls._client_secret
         )
+
+        cls._base_path = "write"
+        cls._test_table = cls.make_mock_diabetes_arrow_table(random=True)
+        cls._fixed_table = cls.make_mock_diabetes_arrow_table(random=False)
 
     @classmethod
     def __get_azure_account_url(cls):
