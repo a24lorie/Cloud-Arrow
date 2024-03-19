@@ -1,15 +1,13 @@
-import pandas as pd
-
-from tests.core import ADLSTestBase
-import pyarrow as pa
+import deltalake as dlt
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
-import deltalake as dlt
+
+from tests.core import ADLSTestBase
 
 
 class TestADLSDataset(ADLSTestBase):
     _base_path = None
-    _test_df = None
+    _test_table = None
     _schema = None
 
     @classmethod
@@ -17,7 +15,7 @@ class TestADLSDataset(ADLSTestBase):
         ADLSTestBase.setUpClass()
 
         cls._base_path = "write"
-        cls._test_df = pd.read_csv("../data/diabetes/csv/nopart/diabetes.csv")
+        cls._test_table = cls.make_mock_diabetes_arrow_table()
 
         try:
             # write parquet directories
@@ -26,7 +24,7 @@ class TestADLSDataset(ADLSTestBase):
             ADLSTestBase._get_filesystem_client().create_directory(f"{cls._base_path}/deltalake/part")
             ADLSTestBase._get_filesystem_client().create_directory(f"{cls._base_path}/deltalake/nopart")
 
-            arr_table = pa.Table.from_pandas(cls._test_df)
+            arr_table = cls._test_table
             cls._schema = arr_table.schema
 
             # use pyarrow library to write parquet files
