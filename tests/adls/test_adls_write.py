@@ -29,7 +29,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_no_compression(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="parquet",
                                         path=f"{self._base_path}/parquet/test_nocompression",
                                         write_options=ParquetWriteOptions(
@@ -58,7 +58,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_snappy(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="parquet",
                                         path=f"{self._base_path}/parquet/test_snappy",
                                         write_options=ParquetWriteOptions(
@@ -86,7 +86,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_gzip(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="parquet",
                                         path=f"{self._base_path}/parquet/test_gzip",
                                         write_options=ParquetWriteOptions(
@@ -114,7 +114,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_brotli(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="parquet",
                                         path=f"{self._base_path}/parquet/test_brotli",
                                         write_options=ParquetWriteOptions(
@@ -142,7 +142,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_zstd(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="parquet",
                                         path=f"{self._base_path}/parquet/test_zstd",
                                         write_options=ParquetWriteOptions(
@@ -170,7 +170,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_parquet_nopart_lz4(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="parquet",
                                         path=f"{self._base_path}/parquet/test_lz4",
                                         write_options=ParquetWriteOptions(
@@ -198,7 +198,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_no_compression(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="deltalake",
                                         path=f"{self._base_path}/deltalake/test_nocompression",
                                         write_options=DeltaLakeWriteOptions(
@@ -229,7 +229,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_snappy(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="deltalake",
                                         path=f"{self._base_path}/deltalake/test_snappy",
                                         write_options=DeltaLakeWriteOptions(
@@ -259,7 +259,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_gzip(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="deltalake",
                                         path=f"{self._base_path}/deltalake/test_gzip",
                                         write_options=DeltaLakeWriteOptions(
@@ -289,7 +289,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_brotli(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="deltalake",
                                         path=f"{self._base_path}/deltalake/test_brotli",
                                         write_options=DeltaLakeWriteOptions(
@@ -319,7 +319,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_zstd(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="deltalake",
                                         path=f"{self._base_path}/deltalake/test_zstd",
                                         write_options=DeltaLakeWriteOptions(
@@ -349,7 +349,7 @@ class TestADLSWrite(ADLSTestBase):
 
     def test_adls_write_deltalake_nopart_lz4(self):
         # write the table to ADLS
-        self._adls_object_storage.write(table=self._test_df,
+        self._adls_object_storage.write(data=self._test_df,
                                         file_format="deltalake",
                                         path=f"{self._base_path}/deltalake/test_lz4",
                                         write_options=DeltaLakeWriteOptions(

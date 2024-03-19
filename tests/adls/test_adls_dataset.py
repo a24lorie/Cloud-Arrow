@@ -70,7 +70,6 @@ class TestADLSDataset(ADLSTestBase):
         finally:
             pass
 
-
     def test_adls_dataset_from_deltalake_nopart(self):
         dataset = self._adls_object_storage.dataset(
             file_format="deltalake",

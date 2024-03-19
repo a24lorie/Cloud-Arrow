@@ -17,7 +17,7 @@ class TestADLSReadToPandas(ADLSTestBase):
         ADLSTestBase.setUpClass()
 
         cls._base_path = "write"
-        cls._test_df = pd.read_csv("../data/diabetes/csv/nopart/diabetes.csv")
+        cls._test_table = cls.make_mock_diabetes_arrow_table()
 
         try:
             # write parquet directories
@@ -36,7 +36,8 @@ class TestADLSReadToPandas(ADLSTestBase):
             ADLSTestBase._get_filesystem_client().create_directory(f"{cls._base_path}/deltalake/test_zstd")
             ADLSTestBase._get_filesystem_client().create_directory(f"{cls._base_path}/deltalake/test_lz4")
 
-            arr_table = pa.Table.from_pandas(cls._test_df)
+            arr_table = cls._test_table
+            cls._schema = arr_table.schema
 
             # use pyarrow library to write parquet files
             pq.write_to_dataset(arr_table, filesystem=cls._filesystem, compression='none',
@@ -112,7 +113,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -131,7 +132,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -150,7 +151,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -169,7 +170,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -188,7 +189,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -207,7 +208,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -226,7 +227,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -245,7 +246,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -264,7 +265,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -283,7 +284,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -302,7 +303,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,
@@ -321,7 +322,7 @@ class TestADLSReadToPandas(ADLSTestBase):
             )
 
             count_input_df = len(input_df.index)
-            count_test_df = len(self._test_df.index)
+            count_test_df = self._test_table.num_rows
 
             self.assertEqual(
                 count_input_df,

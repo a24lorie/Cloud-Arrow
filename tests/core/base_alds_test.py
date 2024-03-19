@@ -7,9 +7,10 @@ from azure.storage.filedatalake import DataLakeDirectoryClient, FileSystemClient
 from dotenv import load_dotenv
 
 from cloud.adls import ADLSStorage
+from tests.core.base_test import TestBase
 
 
-class ADLSTestBase(unittest.TestCase):
+class ADLSTestBase(TestBase):
 
     _container_name = None
     _storage_account_name = None
