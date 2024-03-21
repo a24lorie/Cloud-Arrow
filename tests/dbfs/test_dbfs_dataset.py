@@ -11,7 +11,6 @@ from tests.core.base_dbfs_test import DBFSTestBase
 
 class TestDBFSDataset(DBFSTestBase):
     _base_path = None
-    _test_df = None
     _schema = None
 
     @classmethod
@@ -19,16 +18,14 @@ class TestDBFSDataset(DBFSTestBase):
         DBFSTestBase.setUpClass()
 
         cls._base_path = "/FileStore/write"
-        cls._test_df = pd.read_csv("../../../filesystem_spec/fsspec/implementations/tests/data/diabetes.csv")
+        arr_table = cls.make_mock_diabetes_arrow_table()
 
         try:
             # write parquet directories
             cls._filesystem.makedir(path=f"{cls._base_path}/parquet/part", create_parents=True)
             cls._filesystem.makedir(path=f"{cls._base_path}/parquet/nopart", create_parents=True)
-            cls._filesystem.makedir(path=f"{cls._base_path}/deltalake/part", create_parents=True)
-            cls._filesystem.makedir(path=f"{cls._base_path}/deltalake/nopart", create_parents=True)
+            cls._filesystem.makedir(path=f"{cls._base_path}/deltalake", create_parents=True)
 
-            arr_table = pa.Table.from_pandas(cls._test_df)
             cls._schema = arr_table.schema
 
             # use pyarrow library to write parquet files
@@ -44,17 +41,17 @@ class TestDBFSDataset(DBFSTestBase):
             # use deltalake library to write deltalake files
             dlt.write_deltalake(
                 table_or_uri=cls._dbfs_object_storage._get_deltalake_url(f"{cls._base_path}/deltalake/part"),
-                data=arr_table, mode="error", partition_by=["Pregnancies"],
+                data=arr_table, mode="overwrite", partition_by=["Pregnancies"],
                 storage_options=cls._dbfs_object_storage._get_deltalake_storage_options(),
                 file_options=ds.ParquetFileFormat().make_write_options(compression='none'))
             dlt.write_deltalake(
                 table_or_uri=cls._dbfs_object_storage._get_deltalake_url(f"{cls._base_path}/deltalake/nopart"),
-                data=arr_table, mode="error",
+                data=arr_table, mode="overwrite",
                 storage_options=cls._dbfs_object_storage._get_deltalake_storage_options(),
                 file_options=ds.ParquetFileFormat().make_write_options(compression='none'))
         except Exception as err:
             traceback.print_exc()
-            raise  err
+            raise err
         finally:
             pass
 
@@ -77,40 +74,3 @@ class TestDBFSDataset(DBFSTestBase):
             )
         finally:
             pass
-
-
-    # def test_dbfs_dataset_from_deltalake_nopart(self):
-    #     dataset = self._dbfs_object_storage.dataset(
-    #         file_format="deltalake",
-    #         path=f"{self._base_path}/deltalake/nopart"
-    #     )
-    #
-    #     self.assertEqual(
-    #         first=set(self._schema.names).difference(set(dataset.schema.names)),
-    #         second=set(),
-    #         msg="Should match"
-    #     )
-    #
-    # def test_dbfs_dataset_from_parquet_part(self):
-    #     dataset = self._dbfs_object_storage.dataset(
-    #         file_format="parquet",
-    #         path=f"{self._base_path}/parquet/part"
-    #     )
-    #
-    #     self.assertEqual(
-    #         first=set(self._schema.names).difference(set(dataset.schema.names)),
-    #         second=set(),
-    #         msg="Should match"
-    #     )
-    #
-    # def test_dbfs_dataset_from_deltalake_part(self):
-    #     dataset = self._dbfs_object_storage.dataset(
-    #         file_format="deltalake",
-    #         path=f"{self._base_path}/deltalake/part"
-    #     )
-    #
-    #     self.assertEqual(
-    #         first=set(self._schema.names).difference(set(dataset.schema.names)),
-    #         second=set(),
-    #         msg="Should match"
-    #     )

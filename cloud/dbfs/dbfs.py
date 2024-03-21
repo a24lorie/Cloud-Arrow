@@ -34,6 +34,7 @@ class DBFSStorage(AbstractStorage, metaclass=ABCMeta):
         self._instance = instance
         self._token = token
 
+
     def _get_filesystem(self) -> Any:
         return DatabricksFileSystem(
             instance=self._instance,
@@ -53,13 +54,7 @@ class DBFSStorage(AbstractStorage, metaclass=ABCMeta):
            example:
                storage_options = {"azure_storage_account_name": f"{self._account_name}", "azure_storage_access_key": "..."}
        """
-
-        return {
-            "azure_storage_account_name": f"{self._account_name}",
-            "tenant_id": f"{self._tenant_id}",
-            "client_id": f"{self._client_id}",
-            "client_secret": f"{self._client_secret}"
-        }
+        pass
 
     def _get_deltalake_url(self, path) -> str:
-        return f"abfss://{self._container}@{self._account_name}.dfs.core.windows.net/{AbstractStorage._normalize_path(path)}"
+        return self._get_filesystem_base_path(path=path)
