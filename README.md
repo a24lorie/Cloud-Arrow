@@ -1,7 +1,7 @@
 <p style="text-align: center;">
    Feb 2024 <br/>
    Alfredo Lorie Bernardo, Ignacio Rodriguez Sanchez <br/>
-   version 0.7.0
+   version 0.8.0
 </p>
 
 # Cloud Arrow
@@ -257,12 +257,13 @@ To write files to ADLSGen2, GCSFS or the Local Filesystem use the **object_stora
 The Cloud Arrow library provides an unified and consistence experience across all the filesystem implementations 
 to write parquet files or delta-lake tables, the following method is available for writing:
 
-* write(data, file_format, path, write_options: WriteOptions)
+* write(data, file_format, path, basename_template, write_options: WriteOptions)
 1. **data**: (*Required*) - Can be one of pandas.DataFrame, pyarrow.Dataset, Table/RecordBatch, RecordBatchReader, list of \
                    Table/RecordBatch, or iterable of RecordBatch 
 2. **file_format**: (*Required*) - Can be one of "parquet" or "deltalake"
 3. **path**:  (*Required*)  - The object storage location to the dataset (can be a single file name or directory name)
-4. **write_options** - Required - Options to write the files including: 
+4. **basename_template** (*Optional*) - A template string used to generate basenames of written data files.
+5. **write_options** - (*Required*) - Options to write the files including: 
     ```
     WriteOptions 
     |     * partitions: List of the names of columns to split the dataset. 

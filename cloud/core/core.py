@@ -457,7 +457,7 @@ class AbstractStorage(metaclass=ABCMeta):
             filters=filters
         ).to_pandas()
 
-    def write(self, data, file_format, path, write_options: WriteOptions):
+    def write(self, data, file_format, path, basename_template, write_options: WriteOptions):
         """
         :param data: pandas.DataFrame, pyarrow.Dataset, Table/RecordBatch, RecordBatchReader, list of \
                     Table/RecordBatch, or iterable of RecordBatch
@@ -470,6 +470,11 @@ class AbstractStorage(metaclass=ABCMeta):
             Path pointing to a directory:
                 The directory gets discovered recursively according to a
                 partitioning scheme if given.
+        :param basename_template : str, optional
+            A template string used to generate basenames of written data files.
+            The token '{i}' will be replaced with an automatically incremented
+            integer. If not specified, it defaults to
+            "part-{i}." + format.default_extname
         :param write_options:
         """
 
@@ -501,6 +506,7 @@ class AbstractStorage(metaclass=ABCMeta):
                 data=pyarr_data,
                 format=file_format,
                 filesystem=filesystem,
+                basename_template=basename_template,
                 base_dir=self._get_filesystem_base_path(path=path),
                 partitioning=write_options.partitions,
                 existing_data_behavior=write_options.existing_data_behavior(),
@@ -520,19 +526,3 @@ class AbstractStorage(metaclass=ABCMeta):
                 mode=write_options.existing_data_behavior()
             )
 
-
-
-    def write_batch(self, batch, file_format, path, write_options: WriteOptions):
-        """
-        :param table
-
-        :param file_format: str
-            Currently "parquet", "deltalake" supported.
-        :param path: str
-            Path pointing to a single file:
-                Open a Dataset from a single file.
-            Path pointing to a directory:
-                The directory gets discovered recursively according to a
-                partitioning scheme if given.
-        :param write_options:
-        """

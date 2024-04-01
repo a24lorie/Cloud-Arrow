@@ -24,6 +24,27 @@ class TestLocalFilesystemWrite(LocalFilesystemTestBase):
         table_rows = ds.dataset(source=f"{path}", filesystem=self._filesystem).count_rows()
         assert (table_rows == 25)
 
+    def test_adls_write_parquet_nopart_no_compression_with_base_template(self):
+        # write the table to ADLS
+        self._local_filesystem_storage.write(data=self._test_table,
+                                        file_format="parquet",
+                                        basename_template="filename{i}.parquet",
+                                        path=f"{self._base_path}/parquet/test_nocompression",
+                                        write_options=ParquetWriteOptions(
+                                            partitions=[],
+                                            compression_codec="None",
+                                            existing_data_behavior="overwrite_or_ignore")
+                                        )
+
+        try:
+            paths = self._filesystem.ls(path=f"{self._base_path}/parquet/test_nocompression", detail=True)
+
+            assert (len(paths) == 1)
+            for path in paths:
+                assert (path['name'].endswith(f"/parquet/test_nocompression/filename0.parquet"))
+        finally:
+            pass
+
     def test_adls_write_parquet_nopart_no_compression_from_arrow_table(self):
         # write the table to local filesystem
         self._local_filesystem_storage.write(data=self._test_table,
