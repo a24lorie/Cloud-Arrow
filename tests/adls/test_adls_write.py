@@ -17,6 +17,7 @@ class TestADLSWrite(ADLSTestBase):
     @classmethod
     def setUpClass(cls):
         ADLSTestBase.setUpClass()
+        cls._base_path = "write"
 
     @classmethod
     def tearDownClass(cls):
@@ -26,6 +27,50 @@ class TestADLSWrite(ADLSTestBase):
     def validate_number_of_records(self, path):
         table_rows = ds.dataset(source=f"{path}", filesystem=self._filesystem).count_rows()
         assert (table_rows == 25)
+
+    def test_adls_write_parquet_nopart_no_compression_with_base_template(self):
+        # write the table to ADLS
+        self._adls_object_storage.write(data=self._test_table,
+                                        file_format="parquet",
+                                        basename_template="filename{i}.parquet",
+                                        path=f"{self._base_path}/parquet/test_nocompression",
+                                        write_options=ParquetWriteOptions(
+                                            partitions=[],
+                                            compression_codec="None",
+                                            existing_data_behavior="overwrite_or_ignore")
+                                        )
+
+        try:
+            paths = self._filesystem.ls(path=f"datalake/{self._base_path}/parquet/test_nocompression", detail=True)
+
+            assert (len(paths) == 1)
+            for path in paths:
+                assert (path['name'] == f"datalake/{self._base_path}/parquet/test_nocompression/filename0.parquet")
+        finally:
+            pass
+
+    def test_adls_write_parquet_part_no_compression_with_base_template(self):
+        # write the table to ADLS
+        self._adls_object_storage.write(data=self._fixed_table,
+                                        file_format="parquet",
+                                        basename_template="filename{i}.parquet",
+                                        path=f"{self._base_path}/parquet/test_nocompression",
+                                        write_options=ParquetWriteOptions(
+                                            partitions=["Pregnancies"],
+                                            compression_codec="None",
+                                            existing_data_behavior="overwrite_or_ignore")
+                                        )
+
+        try:
+            paths = self._filesystem.ls(path=f"datalake/{self._base_path}/parquet/test_nocompression", detail=True)
+
+            for path in paths:
+                if (path['type'] == "directory"):
+                    paths_lv2 = self._filesystem.ls(path['name'])
+                    for path_lv2 in paths_lv2:
+                        pass
+        finally:
+            pass
 
     def test_adls_write_parquet_nopart_no_compression_from_arrow_table(self):
         # write the table to ADLS
