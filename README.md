@@ -1,7 +1,7 @@
 <p style="text-align: center;">
-   Feb 2024 <br/>
+   April 2024 <br/>
    Alfredo Lorie Bernardo, Ignacio Rodriguez Sanchez <br/>
-   version 0.8.0
+   version 0.8.1
 </p>
 
 # Cloud Arrow
